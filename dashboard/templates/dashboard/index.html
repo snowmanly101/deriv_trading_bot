@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Celooh Forex Trading</title>
+    <title>Dashboard | Celooh Forex Trading Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -12,9 +12,11 @@
             --neon-gold: #f59e0b;
             --neon-cyan: #38bdf8;
             --success-green: #10b981;
+            --danger-red: #ef4444;
             --text-white: #f8fafc;
             --text-muted: #94a3b8;
             --border-color: rgba(245, 158, 11, 0.2);
+            --border-glow: rgba(56, 189, 248, 0.25);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -54,7 +56,7 @@
         }
 
         .navbar {
-            max-width: 1200px;
+            max-width: 1240px;
             margin: 0 auto;
             padding: 20px;
             display: flex;
@@ -74,10 +76,15 @@
             text-decoration: none;
             font-size: 13px;
             font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
         }
 
         .main-container {
-            max-width: 1200px;
+            max-width: 1240px;
             margin: 20px auto;
             padding: 0 20px;
             display: grid;
@@ -92,26 +99,48 @@
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             border-radius: 20px;
-            padding: 28px;
+            padding: 24px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.5);
             margin-bottom: 24px;
         }
 
-        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .card-title { font-size: 18px; font-weight: 700; color: var(--text-white); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+        .card-title { font-size: 17px; font-weight: 700; color: var(--text-white); }
 
         /* Forex Hero Banner */
         .hero-banner {
             background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%),
                         url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80') center/cover;
             border-radius: 20px;
-            height: 180px;
+            height: 160px;
             position: relative;
             display: flex;
             align-items: flex-end;
             padding: 24px;
             border: 1px solid var(--border-color);
         }
+
+        /* Performance Grid Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(3, 7, 18, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+        .stat-val { font-size: 18px; font-weight: 800; }
+        .stat-val.win { color: var(--success-green); }
+        .stat-val.loss { color: var(--danger-red); }
+        .stat-val.gold { color: var(--neon-gold); }
 
         .guide-box {
             background: rgba(3, 7, 18, 0.8);
@@ -137,6 +166,59 @@
             font-size: 14px;
         }
 
+        .form-control:read-only {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        /* Modern Switch Toggle */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(3, 7, 18, 0.8);
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--success-green); }
+        input:checked + .slider:before { transform: translateX(24px); }
+        input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+
         .btn-save {
             width: 100%;
             padding: 16px;
@@ -147,7 +229,10 @@
             font-weight: 800;
             font-size: 15px;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
+
+        .btn-save:hover { opacity: 0.95; }
 
         /* Trade Feed Item Styling */
         .trade-feed-list { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; }
@@ -183,7 +268,7 @@
             <div class="ticker-item">AUD/USD <span>0.6580</span> <span class="ticker-green">+0.32% ▲</span></div>
             <div class="ticker-item">XAU/USD (Gold) <span>2385.10</span> <span class="ticker-green">+0.85% ▲</span></div>
             <div class="ticker-item">Volatility 100 Index <span>4821.30</span> <span class="ticker-green">+1.12% ▲</span></div>
-            <!-- Duplicate for seamless continuous ticker loop -->
+            <!-- Seamless loop clone -->
             <div class="ticker-item">EUR/USD <span>1.0854</span> <span class="ticker-green">+0.24% ▲</span></div>
             <div class="ticker-item">GBP/USD <span>1.2641</span> <span class="ticker-green">+0.15% ▲</span></div>
         </div>
@@ -218,6 +303,36 @@
 
             <div style="height: 24px;"></div>
 
+            <!-- Performance Metrics Dashboard -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📊 Live Trading Performance</span>
+                    <span style="font-size: 12px; color: var(--neon-cyan); font-weight: 600;">Real-time Metrics</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-val gold">{{ profile.total_trades|default:"0" }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Wins</div>
+                        <div class="stat-val win">{{ profile.total_wins|default:"0" }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Losses</div>
+                        <div class="stat-val loss">{{ profile.total_losses|default:"0" }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-val gold">{{ profile.win_rate|default:"0.0" }}%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Net Profit</div>
+                        <div class="stat-val win">+${{ profile.net_profit|default:"0.00" }}</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Beginner Guidance Box -->
             <div class="guide-box">
                 <h4>💡 Step-by-Step Guide: How to Link Your Deriv API Token</h4>
@@ -226,20 +341,28 @@
                     <li>Click your profile icon at top right ➔ Select <strong>Account Settings</strong> ➔ Click <strong>API Token</strong> in the left sidebar.</li>
                     <li>Check both <strong>Read</strong> and <strong>Trade</strong> permissions.</li>
                     <li>Type a name like <code>CeloohBot</code> and click <strong>Create</strong>, then copy your token.</li>
-                    <li>Paste your token below, check the bot execution box, and click Save!</li>
+                    <li>Paste your token below, toggle the bot activation switch, and click Save!</li>
                 </ol>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">Deriv SVG Account Integration</span>
+                    <span class="card-title">Deriv Account & API Integration</span>
                 </div>
 
                 <form method="POST">
                     {% csrf_token %}
                     <div class="form-group">
                         <label>Deriv / MT5 Account ID (CR Number)</label>
-                        <input type="text" name="deriv_account_id" class="form-control" value="{{ profile.deriv_account_id|default:'' }}" placeholder="e.g. CR1234567">
+                        <input type="text" name="deriv_account_id" class="form-control" 
+                               value="{{ profile.deriv_account_id|default:'' }}" 
+                               placeholder="e.g. CR1234567" 
+                               {% if profile.deriv_account_id %}readonly{% endif %}>
+                        {% if profile.deriv_account_id %}
+                            <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
+                                🔒 Registered to your 5-day trial session. Account IDs are locked to prevent trial abuse.
+                            </p>
+                        {% endif %}
                     </div>
 
                     <div class="form-group">
@@ -247,12 +370,18 @@
                         <input type="password" name="deriv_api_token" class="form-control" value="{{ profile.deriv_api_token|default:'' }}" placeholder="Paste your API token here">
                     </div>
 
-                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(3, 7, 18, 0.8); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                    <!-- Modern Toggle Switch -->
+                    <div class="switch-container">
                         <div>
-                            <div style="font-weight: 700; font-size: 14px;">Automated Bot Execution</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">Run live Forex and Volatility Index strategy</div>
+                            <div style="font-weight: 700; font-size: 14px;">Automated Bot Engine</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for Forex and Volatility Index strategies</div>
                         </div>
-                        <input type="checkbox" name="is_bot_active" style="width: 20px; height: 20px; accent-color: var(--neon-gold);" {% if profile.is_bot_active and profile.is_trial_active %}checked{% endif %} {% if not profile.is_trial_active %}disabled{% endif %}>
+                        <label class="switch">
+                            <input type="checkbox" id="botToggle" name="is_bot_active" 
+                                   {% if profile.is_bot_active and profile.is_trial_active %}checked{% endif %} 
+                                   {% if not profile.is_trial_active %}disabled{% endif %}>
+                            <span class="slider"></span>
+                        </label>
                     </div>
 
                     <button type="submit" class="btn-save">Save & Synchronize Trading Bot</button>
@@ -280,7 +409,7 @@
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-muted);">BOT ALGORITHM</div>
-                <div style="font-size: 15px; font-weight: 700; margin-top: 4px;">
+                <div style="font-size: 15px; font-weight: 700; margin-top: 4px;" id="botStatusDisplay">
                     {% if profile.is_bot_active and profile.is_trial_active %} 
                         <span style="color: var(--success-green);">● RUNNING LIVE</span> 
                     {% else %} 
@@ -304,13 +433,29 @@
 
     </main>
 
-    <!-- Live Execution Stream Script -->
+    <!-- Interactive Toggle UI & Live Execution Stream Script -->
     <script>
+        // Update Bot Status Text live when toggle is clicked
+        const botToggle = document.getElementById('botToggle');
+        const botStatusDisplay = document.getElementById('botStatusDisplay');
+
+        if (botToggle && botStatusDisplay) {
+            botToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    botStatusDisplay.innerHTML = '<span style="color: var(--success-green);">● RUNNING LIVE</span>';
+                } else {
+                    botStatusDisplay.innerHTML = '<span style="color: var(--text-muted);">○ PAUSED</span>';
+                }
+            });
+        }
+
+        // Live Execution Stream simulation
         const traders = ['@Alex_M', '@David_K', '@Celooh_VIP', '@Michael_R', '@Sarah_T'];
         const pairs = ['EUR/USD', 'XAU/USD (Gold)', 'GBP/USD', 'Volatility 100', 'USD/JPY'];
 
         function addLiveTrade() {
             const feed = document.getElementById('tradeFeed');
+            if (!feed) return;
             const trader = traders[Math.floor(Math.random() * traders.length)];
             const pair = pairs[Math.floor(Math.random() * pairs.length)];
             const profit = (Math.random() * (240 - 50) + 50).toFixed(2);
