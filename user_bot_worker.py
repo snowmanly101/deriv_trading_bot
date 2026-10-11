@@ -7,26 +7,24 @@ import django
 import math
 
 # Setup Django Environment to access the Database & Models
-sys.path.append(os.path.dirname(os.path.abspath(_file_)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from dashboard.models import Profile
 
-# Deriv WebSocket Endpoint (Using public Deriv demo/live endpoint)
+# Deriv WebSocket Endpoint
 DERIV_WS_URL = "wss://ws.derivws.com/websockets/v3?app_id=1089"
 
 def calculate_ema(prices, period=200):
     """Calculates Exponential Moving Average."""
     if len(prices) < period:
-        # Fallback simple average if not enough candles yet
         return [sum(prices) / len(prices)] * len(prices)
     
     multiplier = 2 / (period + 1)
     ema = [sum(prices[:period]) / period]
     for price in prices[period:]:
         ema.append((price - ema[-1]) * multiplier + ema[-1])
-    # Pad the beginning to match length
     return [ema[0]] * (period - 1) + ema
 
 def calculate_rsi(prices, period=14):
@@ -71,7 +69,6 @@ def calculate_bollinger_bands(prices, period=20, std_dev=2):
         upper_bands.append(mean + (std_dev * deviation))
         lower_bands.append(mean - (std_dev * deviation))
     
-    # Pad beginning
     pad = [prices[0]] * (period - 1)
     return pad + upper_bands, pad + lower_bands
 
@@ -83,7 +80,7 @@ def evaluate_triple_confluence(closes):
     3. Volatility boundary via Bollinger Bands
     """
     if len(closes) < 200:
-        return None  # Wait for enough data history
+        return None
         
     rsi = calculate_rsi(closes, period=14)
     ema_200 = calculate_ema(closes, period=200)
@@ -95,7 +92,6 @@ def evaluate_triple_confluence(closes):
     curr_upper = upper_band[-1]
     curr_lower = lower_band[-1]
     
-    # 3 Confluence Conditions for BUY
     is_uptrend = current_price > current_ema
     is_oversold = current_rsi < 40
     is_touching_lower = current_price <= curr_lower
@@ -103,7 +99,6 @@ def evaluate_triple_confluence(closes):
     if is_uptrend and is_oversold and is_touching_lower:
         return "BUY"
         
-    # 3 Confluence Conditions for SELL
     is_downtrend = current_price < current_ema
     is_overbought = current_rsi > 60
     is_touching_upper = current_price >= curr_upper
@@ -113,15 +108,49 @@ def evaluate_triple_confluence(closes):
         
     return None
 
+def execute_deriv_trade(ws, signal, account_balance, risk_profile='low'):
+    """
+    Calculates stake based on user risk profile and places a live contract on Deriv.
+    """
+    risk_percentages = {
+        'low': 0.01,     # 1% Risk
+        'medium': 0.015, # 1.5% Risk
+        'high': 0.02     # 2% Risk
+    }
+    
+    risk_pct = risk_percentages.get(risk_profile, 0.01)
+    stake = round(account_balance * risk_pct, 2)
+    
+    if stake < 0.35:
+        stake = 0.35  # Minimum Deriv stake
+
+    contract_type = "CALL" if signal == "BUY" else "PUT"
+    
+    trade_request = {
+        "buy": 1,
+        "price": stake,
+        "parameters": {
+            "amount": stake,
+            "basis": "stake",
+            "contract_type": contract_type,
+            "currency": "USD",
+            "duration": 5,
+            "duration_unit": "m",
+            "symbol": "R_100"
+        }
+    }
+    
+    ws.send(json.dumps(trade_request))
+    print(f"[+] EXECUTED LIVE {contract_type} trade with stake ${stake} ({risk_pct*100}% Risk Profile)")
+
 def run_bot(user_id):
-    """Main worker execution loop for a specific user."""
     print(f"[*] Starting bot worker for User ID: {user_id}")
     
-    # Fetch profile and token from DB
     try:
         profile = Profile.objects.get(id=user_id)
         token = profile.deriv_api_token
         account_id = profile.deriv_account_id
+        risk_profile = getattr(profile, 'risk_profile', 'low')
     except Profile.DoesNotExist:
         print(f"[!] Profile for user ID {user_id} not found.")
         return
@@ -131,41 +160,37 @@ def run_bot(user_id):
         return
 
     starting_balance = 0.0
-    current_daily_loss = 0.0
+    current_balance = 100.0  # Default fallback
 
     def on_message(ws, message):
-        nonlocal starting_balance, current_daily_loss
+        nonlocal starting_balance, current_balance
         data = json.loads(message)
         msg_type = data.get('msg_type')
         
-        # 1. Authorize with Deriv API
         if msg_type == 'authorize':
             if 'error' in data:
                 print(f"[!] Authorization failed: {data['error']['message']}")
                 ws.close()
             else:
                 print(f"[+] Authorized successfully for account: {account_id}")
-                # Fetch balance to track daily drawdown
                 ws.send(json.dumps({"balance": 1, "subscribe": 1}))
-                # Subscribe to historical candles for analysis (e.g., EUR/USD or Volatility 75 Index)
                 ws.send(json.dumps({
                     "ticks_history": "R_100",
                     "adjust_start_time": 1,
                     "count": 250,
                     "end": "latest",
                     "style": "candles",
-                    "granularity": 300  # 5-minute candles
+                    "granularity": 300
                 }))
 
-        # 2. Handle Balance & Circuit Breaker Check
         elif msg_type == 'balance':
             if 'balance' in data:
-                balance = data['balance'].get('balance')
+                current_balance = data['balance'].get('balance')
                 if starting_balance == 0.0:
-                    starting_balance = balance
+                    starting_balance = current_balance
                 
-                # Check 5% Daily Drawdown Circuit Breaker
-                current_daily_loss = starting_balance - balance
+                # 5% Daily Drawdown Circuit Breaker
+                current_daily_loss = starting_balance - current_balance
                 max_allowed_loss = starting_balance * 0.05
                 
                 if current_daily_loss >= max_allowed_loss:
@@ -174,12 +199,10 @@ def run_bot(user_id):
                     profile.save()
                     ws.close()
 
-        # 3. Handle Candles & Run Confluence Engine
         elif msg_type == 'candles':
             candles = data.get('candles', [])
             closes = [c['close'] for c in candles]
             
-            # Check if bot is still active in database
             profile.refresh_from_db()
             if not profile.is_bot_active:
                 print(f"[*] Bot deactivated by user dashboard switch. Exiting worker.")
@@ -189,18 +212,17 @@ def run_bot(user_id):
             signal = evaluate_triple_confluence(closes)
             if signal:
                 print(f"[*] TRIPLE CONFLUENCE SIGNAL DETECTED: {signal} | Price: {closes[-1]}")
-                
-                # Calculate 1% Risk Position Sizing
-                # Send Buy/Sell trade request to Deriv WebSocket here
-                # ws.send(json.dumps({...}))
+                execute_deriv_trade(ws, signal, current_balance, risk_profile)
 
-        # Subscribe to live ticks for continuous updates
         elif msg_type == 'history':
             ws.send(json.dumps({"ticks": "R_100", "subscribe": 1}))
 
-        elif msg_type == 'tick':
-            # Live tick feed can trigger micro-evaluations if needed
-            pass
+        elif msg_type == 'buy':
+            if 'error' in data:
+                print(f"[!] Trade Execution Error: {data['error']['message']}")
+            else:
+                contract_id = data['buy']['contract_id']
+                print(f"[SUCCESS] Contract Placed! Contract ID: {contract_id}")
 
     def on_open(ws):
         print(f"[*] Connected to Deriv WebSocket. Authorizing...")
@@ -212,7 +234,6 @@ def run_bot(user_id):
     def on_close(ws, close_status_code, close_msg):
         print(f"[*] WebSocket closed for user {user_id}.")
 
-    # Run WebSocket connection loop
     ws = websocket.WebSocketApp(
         DERIV_WS_URL,
         on_open=on_open,
