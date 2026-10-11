@@ -1,50 +1,49 @@
+import subprocess
+import os
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from .models import UserProfile
+from .models import Profile
 
-def signup_view(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            # Automatically create a UserProfile for the new user
-            UserProfile.objects.create(user=user)
-            login(request, user)
-            return redirect('dashboard-home')
-    else:
-        form = UserCreationForm()
-    return render(request, 'dashboard/signup.html', {'form': form})
+# Dictionary to track running process IDs per user in memory
+RUNNING_BOTS = {}
 
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('dashboard-home')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'dashboard/login.html', {'form': form})
+@login_required
+def dashboard_view(request):
+    profile, created = Profile.objects.get_or_create(user=request.user)
 
-def logout_view(request):
-    logout(request)
-    return redirect('login')
+    if request.method == "POST":
+        deriv_account_id = request.POST.get("deriv_account_id")
+        deriv_api_token = request.POST.get("deriv_api_token")
+        is_bot_active = request.POST.get("is_bot_active") == "on"
 
-@login_required(login_url='/login/')
-def dashboard_home(request):
-    profile, created = UserProfile.objects.get_or_create(user=request.user)
-    
-    if request.method == 'POST':
-        profile.deriv_account_id = request.POST.get('deriv_account_id')
-        profile.deriv_api_token = request.POST.get('deriv_api_token')
-        profile.is_bot_active = 'is_bot_active' in request.POST
+        # Lock account ID once set to prevent trial manipulation
+        if not profile.deriv_account_id and deriv_account_id:
+            profile.deriv_account_id = deriv_account_id
+
+        profile.deriv_api_token = deriv_api_token
+        profile.is_bot_active = is_bot_active
         profile.save()
-        return redirect('dashboard-home')
 
-    context = {
-        'username': request.user.username,
-        'profile': profile,
-    }
-    return render(request, 'dashboard/index.html', context)
+        # Handle Dynamic Bot Launch/Termination per user session
+        user_id = request.user.id
+        app_id = "10354646"  # Your central App ID or user custom App ID
+
+        if is_bot_active and profile.deriv_api_token:
+            # Terminate any existing instance for this user first
+            if user_id in RUNNING_BOTS and RUNNING_BOTS[user_id].poll() is None:
+                RUNNING_BOTS[user_id].terminate()
+
+            # Spawn a fresh background process specifically for this user's API token
+            proc = subprocess.Popen([
+                "python3", "user_bot_worker.py", str(app_id), profile.deriv_api_token
+            ])
+            RUNNING_BOTS[user_id] = proc
+        else:
+            # User turned off the switch -> Stop their specific process
+            if user_id in RUNNING_BOTS and RUNNING_BOTS[user_id].poll() is None:
+                RUNNING_BOTS[user_id].terminate()
+                del RUNNING_BOTS[user_id]
+
+        return redirect("dashboard")
+
+    return render(request, "index.html", {"profile": profile, "username": request.user.username})
