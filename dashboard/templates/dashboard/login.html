@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Celooh Forex Trading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #030712;
+            --card-bg: rgba(11, 19, 38, 0.88);
+            --neon-gold: #f59e0b;
+            --neon-cyan: #38bdf8;
+            --text-white: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(245, 158, 11, 0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-main);
+            background-image: 
+                linear-gradient(to right, rgba(3, 7, 18, 0.92), rgba(3, 7, 18, 0.80)),
+                url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 20px;
+        }
+
+        .main-wrapper {
+            max-width: 1150px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 32px;
+            align-items: center;
+        }
+
+        @media (max-width: 950px) {
+            .main-wrapper { grid-template-columns: 1fr; }
+        }
+
+        /* Explanatory Info Card */
+        .info-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 36px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .info-card h2 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #ffffff 40%, var(--neon-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .info-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .scam-warning {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 12px;
+            color: #fca5a5;
+            margin-top: 16px;
+            line-height: 1.5;
+        }
+
+        /* Login Card & Moving Robot Graphic */
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 40px 32px;
+            width: 100%;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--neon-gold), var(--neon-cyan));
+        }
+
+        /* Animated Female Robot Avatar */
+        .robot-container {
+            width: 85px;
+            height: 85px;
+            margin: 0 auto 16px auto;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: floatRobot 3s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        @keyframes floatRobot {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-8px) scale(1.03); }
+        }
+
+        .robot-avatar {
+            font-size: 38px;
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 4px var(--neon-cyan)); }
+            50% { filter: drop-shadow(0 0 12px var(--neon-gold)); }
+        }
+
+        .brand-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        form { text-align: left; }
+        form p { margin-bottom: 16px; }
+
+        form label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--neon-gold);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(3, 7, 18, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-white);
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: var(--neon-gold);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, var(--neon-gold) 0%, #d97706 100%);
+            border: none;
+            border-radius: 10px;
+            color: #030712;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer-text a { color: var(--neon-gold); text-decoration: none; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        
+        <!-- About Website & Security Explanations -->
+        <div class="info-card">
+            <h2>Welcome to Celooh Forex Trading</h2>
+            <p><strong>What We Offer:</strong> An institutional automated algorithmic trading platform designed to manage trades on Deriv and MT5 servers 24/7 without manual intervention.</p>
+            <p><strong>How It Works & Profit/Stop-Loss:</strong> Our automated bot scans Forex pairs and volatility indices using high-precision RSI/SMA strategies. It opens trades, locks in profits automatically, and applies strict trailing stop-loss thresholds to protect your balance from deep drawdowns.</p>
+            <p><strong>How Earnings Work:</strong> Users enjoy a 5-day risk-free trial. Afterward, full automated bot access requires a $30/month subscription paid in Bitcoin.</p>
+            
+            <div class="scam-warning">
+                🚨 <strong>Important Security & Anti-Scam Notice:</strong><br>
+                • We <strong>never</strong> take custody of your funds or ask you to send money to anyone for trading.<br>
+                • We <strong>never</strong> ask for your Deriv/MT5 login password. You only link via secure API tokens.<br>
+                • If anyone contacts you claiming to represent Celooh requesting money or passwords, report it immediately!
+            </div>
+        </div>
+
+        <!-- Animated Login Form Card -->
+        <div class="login-card">
+            <!-- Animated Female AI Robot Graphic -->
+            <div class="robot-container">
+                <span class="robot-avatar">🤖👩‍💻</span>
+            </div>
+
+            <div class="brand-title">CELOOH <span style="color: var(--neon-gold);">FOREX</span></div>
+
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn-submit">Sign In to Trading Portal</button>
+            </form>
+
+            <div class="footer-text">
+                Need bot access? <a href="/signup/">Start Free Trial ($30/Mo)</a>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Celooh Forex Trading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #030712;
+            --card-bg: rgba(11, 19, 38, 0.85);
+            --neon-gold: #f59e0b;
+            --neon-cyan: #38bdf8;
+            --success-green: #10b981;
+            --text-white: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 40%);
+            color: var(--text-white);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* Live Forex Ticker Bar */
+        .ticker-bar {
+            background: rgba(3, 7, 18, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker-wrapper {
+            display: inline-flex;
+            gap: 30px;
+            animation: ticker 25s linear infinite;
+        }
+
+        .ticker-item { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+        .ticker-green { color: #34d399; }
+        .ticker-red { color: #f87171; }
+
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .navbar {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-header { display: flex; align-items: center; gap: 12px; }
+        .brand-title { font-size: 20px; font-weight: 800; letter-spacing: 1px; color: var(--neon-gold); }
+
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 8px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) { .main-container { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            margin-bottom: 24px;
+        }
+
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--text-white); }
+
+        /* Forex Hero Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%),
+                        url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80') center/cover;
+            border-radius: 20px;
+            height: 180px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .guide-box {
+            background: rgba(3, 7, 18, 0.8);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 24px;
+        }
+
+        .guide-box h4 { font-size: 14px; color: var(--neon-cyan); margin-bottom: 8px; font-weight: 700; }
+        .guide-box ol { padding-left: 18px; font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--neon-gold); text-transform: uppercase; margin-bottom: 8px; }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(3, 7, 18, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-white);
+            font-size: 14px;
+        }
+
+        .btn-save {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--neon-gold) 0%, #d97706 100%);
+            border: none;
+            border-radius: 12px;
+            color: #030712;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        /* Trade Feed Item Styling */
+        .trade-feed-list { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; }
+        .trade-card {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 12px 14px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .trial-badge {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--neon-gold);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Live Forex Currency Ticker Bar -->
+    <div class="ticker-bar">
+        <div class="ticker-wrapper">
+            <div class="ticker-item">EUR/USD <span>1.0854</span> <span class="ticker-green">+0.24% ▲</span></div>
+            <div class="ticker-item">GBP/USD <span>1.2641</span> <span class="ticker-green">+0.15% ▲</span></div>
+            <div class="ticker-item">USD/JPY <span>154.20</span> <span class="ticker-red">-0.10% ▼</span></div>
+            <div class="ticker-item">AUD/USD <span>0.6580</span> <span class="ticker-green">+0.32% ▲</span></div>
+            <div class="ticker-item">XAU/USD (Gold) <span>2385.10</span> <span class="ticker-green">+0.85% ▲</span></div>
+            <div class="ticker-item">Volatility 100 Index <span>4821.30</span> <span class="ticker-green">+1.12% ▲</span></div>
+            <!-- Duplicate for seamless continuous ticker loop -->
+            <div class="ticker-item">EUR/USD <span>1.0854</span> <span class="ticker-green">+0.24% ▲</span></div>
+            <div class="ticker-item">GBP/USD <span>1.2641</span> <span class="ticker-green">+0.15% ▲</span></div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="brand-header">
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none">
+                <rect width="100" height="100" rx="24" fill="#f59e0b" />
+                <path d="M 30 55 L 45 70 L 75 35" stroke="#030712" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="brand-title">CELOOH <span style="color: var(--neon-cyan);">FOREX TRADING</span></span>
+        </div>
+
+        <div>
+            <span style="font-size: 14px; font-weight: 600; margin-right: 12px;">Trader: <strong style="color: var(--neon-gold);">{{ username }}</strong></span>
+            <a href="/logout/" class="logout-btn">Log Out</a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <div>
+            <div class="hero-banner">
+                <div>
+                    <h2>Automated Deriv & MT5 Forex Engine</h2>
+                    <p style="color: var(--text-muted); font-size: 13px;">Active Plan: 5-Day Free Trial ($30/Mo BTC Subscription thereafter)</p>
+                </div>
+            </div>
+
+            <div style="height: 24px;"></div>
+
+            <!-- Beginner Guidance Box -->
+            <div class="guide-box">
+                <h4>💡 Step-by-Step Guide: How to Link Your Deriv API Token</h4>
+                <ol>
+                    <li>Log into your account at <strong>Deriv.com</strong> or <strong>app.deriv.com</strong>.</li>
+                    <li>Click your profile icon at top right ➔ Select <strong>Account Settings</strong> ➔ Click <strong>API Token</strong> in the left sidebar.</li>
+                    <li>Check both <strong>Read</strong> and <strong>Trade</strong> permissions.</li>
+                    <li>Type a name like <code>CeloohBot</code> and click <strong>Create</strong>, then copy your token.</li>
+                    <li>Paste your token below, check the bot execution box, and click Save!</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Deriv SVG Account Integration</span>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Deriv / MT5 Account ID (CR Number)</label>
+                        <input type="text" name="deriv_account_id" class="form-control" value="{{ profile.deriv_account_id|default:'' }}" placeholder="e.g. CR1234567">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Deriv API Token</label>
+                        <input type="password" name="deriv_api_token" class="form-control" value="{{ profile.deriv_api_token|default:'' }}" placeholder="Paste your API token here">
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(3, 7, 18, 0.8); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 14px;">Automated Bot Execution</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">Run live Forex and Volatility Index strategy</div>
+                        </div>
+                        <input type="checkbox" name="is_bot_active" style="width: 20px; height: 20px; accent-color: var(--neon-gold);" {% if profile.is_bot_active and profile.is_trial_active %}checked{% endif %} {% if not profile.is_trial_active %}disabled{% endif %}>
+                    </div>
+
+                    <button type="submit" class="btn-save">Save & Synchronize Trading Bot</button>
+                </form>
+            </div>
+        </div>
+
+        <div>
+            <!-- System Status -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">System Status</span>
+                    <span class="trial-badge">
+                        {% if profile.has_paid_subscription %}
+                            ● VIP Paid ($30/Mo)
+                        {% else %}
+                            🎁 Trial: {{ profile.trial_days_remaining }} Days Left
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div style="font-size: 12px; color: var(--text-muted);">ACCOUNT STATUS</div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--neon-gold); margin: 4px 0 16px 0;">
+                    {% if profile.deriv_account_id %} Active ({{ profile.deriv_account_id }}) {% else %} Pending API Token Setup {% endif %}
+                </div>
+
+                <div style="font-size: 12px; color: var(--text-muted);">BOT ALGORITHM</div>
+                <div style="font-size: 15px; font-weight: 700; margin-top: 4px;">
+                    {% if profile.is_bot_active and profile.is_trial_active %} 
+                        <span style="color: var(--success-green);">● RUNNING LIVE</span> 
+                    {% else %} 
+                        <span style="color: var(--text-muted);">○ PAUSED</span> 
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Live Forex Winning Trades Stream -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">⚡ Live Forex Execution Feed</span>
+                    <span style="font-size: 11px; color: var(--success-green); font-weight: 700;">LIVE</span>
+                </div>
+
+                <div class="trade-feed-list" id="tradeFeed">
+                    <!-- Dynamic trades populated via JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Live Execution Stream Script -->
+    <script>
+        const traders = ['@Alex_M', '@David_K', '@Celooh_VIP', '@Michael_R', '@Sarah_T'];
+        const pairs = ['EUR/USD', 'XAU/USD (Gold)', 'GBP/USD', 'Volatility 100', 'USD/JPY'];
+
+        function addLiveTrade() {
+            const feed = document.getElementById('tradeFeed');
+            const trader = traders[Math.floor(Math.random() * traders.length)];
+            const pair = pairs[Math.floor(Math.random() * pairs.length)];
+            const profit = (Math.random() * (240 - 50) + 50).toFixed(2);
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const item = document.createElement('div');
+            item.className = 'trade-card';
+            item.innerHTML = `
+                <div>
+                    <strong>Trader ${trader}</strong><br>
+                    <span style="font-size: 11px; color: var(--text-muted);">${pair} • ${time}</span>
+                </div>
+                <span style="color: var(--success-green); font-weight: 800; font-size: 14px;">+$${profit}</span>
+            `;
+
+            feed.prepend(item);
+            if (feed.children.length > 5) feed.removeChild(feed.lastChild);
+        }
+
+        for(let i=0; i<3; i++) addLiveTrade();
+        setInterval(addLiveTrade, 4000);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Started | Celooh Forex Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #060911;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --primary-glow: #38bdf8;
+            --accent-purple: #6366f1;
+            --success-green: #10b981;
+            --text-white: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.18) 0%, transparent 45%);
+            color: var(--text-white);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .hero-title {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 30%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .value-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .value-card h4 {
+            font-size: 14px;
+            color: var(--primary-glow);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .value-card p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 40px 36px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+        }
+
+        .price-badge {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .price-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary-glow);
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 13px 16px;
+            background: rgba(9, 13, 22, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-white);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, var(--primary-glow) 0%, var(--accent-purple) 100%);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.35);
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(56, 189, 248, 0.45);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Pitch & Value Proposition Copy -->
+        <div>
+            <h1 class="hero-title">Automated Institutional Algorithmic Trading</h1>
+            <p class="hero-desc">Connect your Deriv or MT5 account to Celooh Forex. Our neural-weighted strategy engine executes high-probability trades with strict automated risk management and capital preservation protocols 24/7.</p>
+            
+            <div class="value-grid">
+                <div class="value-card">
+                    <h4>🛡️ Dynamic Drawdown Shield</h4>
+                    <p>Automated trailing Stop-Loss algorithms guarantee strict risk management, capping maximum exposure per position.</p>
+                </div>
+                <div class="value-card">
+                    <h4>⚡ High-Frequency RSI/SMA</h4>
+                    <p>Sub-millisecond trade triggers scan volatility indices and Forex pairs for continuous signal confirmation.</p>
+                </div>
+                <div class="value-card">
+                    <h4>🤖 100% Hands-Free Bot</h4>
+                    <p>Zero manual intervention required. Set your Deriv API token once and let the bot manage executions.</p>
+                </div>
+                <div class="value-card">
+                    <h4>📊 Live Execution Analytics</h4>
+                    <p>Track real-time active trades, account equity growth, and strategy performance directly from your dashboard.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onboarding Registration Form -->
+        <div class="form-card">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <svg width="34" height="34" viewBox="0 0 100 100" fill="none">
+                    <defs>
+                        <linearGradient id="celoohGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8" />
+                            <stop offset="100%" stop-color="#6366f1" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="100" height="100" rx="24" fill="url(#celoohGrad)" />
+                    <path d="M 30 55 L 45 70 L 75 35" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span style="font-size: 20px; font-weight: 800; letter-spacing: 1px;">CELOOH <span style="color: var(--primary-glow);">FOREX</span></span>
+            </div>
+
+            <div class="price-badge">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; uppercase">Monthly Subscription</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #fff;">Full Automated Access</div>
+                </div>
+                <div class="price-val">$30 <span style="font-size: 13px; color: var(--text-muted);">/ mo</span></div>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="trader@example.com" required>
+                </div>
+
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label>Phone Number</label>
+                        <input type="text" name="phone_number" class="form-control" placeholder="+123456789" required>
+                    </div>
+                    <div>
+                        <label>Age</label>
+                        <input type="number" name="age" class="form-control" placeholder="e.g. 28" min="18" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="Create secure password" required>
+                </div>
+
+                <button type="submit" class="btn-submit">Proceed to $30/Mo BTC Checkout →</button>
+            </form>
+
+            <div style="text-align: center; margin-top: 18px; font-size: 13px; color: var(--text-muted);">
+                Already have an active account? <a href="/login/" style="color: var(--primary-glow); text-decoration: none; font-weight: 600;">Log In</a>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

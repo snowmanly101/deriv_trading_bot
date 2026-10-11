@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celooh Forex Trading | Institutional Automated Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #060911;
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --primary-glow: #38bdf8;
+            --accent-purple: #6366f1;
+            --success-green: #10b981;
+            --text-white: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 45%);
+            color: var(--text-white);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-header { display: flex; align-items: center; gap: 12px; }
+        .brand-title { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+
+        .nav-btns { display: flex; gap: 14px; align-items: center; }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-white);
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-glow) 0%, var(--accent-purple) 100%);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3);
+        }
+
+        .hero-section {
+            max-width: 1100px;
+            margin: 60px auto 40px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success-green);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 30%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 780px;
+            margin: 0 auto 36px auto;
+            line-height: 1.6;
+        }
+
+        .feature-grid {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) { .feature-grid { grid-template-columns: 1fr; } }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(16px);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+        .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+        .cta-banner {
+            max-width: 1000px;
+            margin: 60px auto;
+            padding: 48px 32px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="brand-header">
+            <svg width="38" height="38" viewBox="0 0 100 100" fill="none">
+                <defs>
+                    <linearGradient id="celoohGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#38bdf8" />
+                        <stop offset="100%" stop-color="#6366f1" />
+                    </linearGradient>
+                </defs>
+                <rect width="100" height="100" rx="24" fill="url(#celoohGrad)" />
+                <path d="M 30 55 L 45 70 L 75 35" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="brand-title">CELOOH <span style="color: var(--primary-glow);">FOREX</span></span>
+        </div>
+
+        <div class="nav-btns">
+            <a href="/login/" class="btn-secondary">Log In</a>
+            <a href="/signup/" class="btn-primary">Start 5-Day Free Trial →</a>
+        </div>
+    </nav>
+
+    <div class="hero-section">
+        <div class="hero-badge">🎁 100% Free 5-Day Trial — Zero Upfront Payment Required</div>
+        <h1 class="hero-title">Automated Trading Engine Built to Protect Capital & Maximise Win Rates</h1>
+        <p class="hero-subtitle">Celooh Forex connects directly to your Deriv & MT5 accounts via API. Experience 5 full days of hands-free automated winning strategy execution before choosing whether to subscribe for $30/month.</p>
+
+        <div style="display: flex; gap: 16px; justify-content: center;">
+            <a href="/signup/" class="btn-primary" style="padding: 16px 36px; font-size: 16px;">Claim Your 5-Day Free Trial Now</a>
+        </div>
+    </div>
+
+    <!-- Feature Value Cards -->
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h3>Automated Risk Management</h3>
+            <p>Our dynamic drawdown shielding algorithm enforces strict trailing Stop-Loss protocols to prevent account drawdowns and lock in accumulated profits.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>RSI & SMA Trend Filtering</h3>
+            <p>High-frequency algorithms continuously scan volatility indices and Forex pairs, executing positions only when multi-indicator probability favors a win.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>100% Hands-Free Execution</h3>
+            <p>Paste your API token once inside your dashboard and let the bot handle trade placement, lot sizing, and risk execution 24 hours a day.</p>
+        </div>
+    </div>
+
+    <div class="cta-banner">
+        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 12px;">Test Drive the Strategy Risk-Free for 5 Days</h2>
+        <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 24px;">Sign up free today. Once your 5-day trial completes, keep the bot running for just $30/month paid in BTC.</p>
+        <a href="/signup/" class="btn-primary" style="padding: 14px 32px; font-size: 15px;">Get Started Free →</a>
+    </div>
+
+</body>
+</html>

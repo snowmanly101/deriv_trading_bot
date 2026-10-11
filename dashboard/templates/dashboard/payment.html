@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete $30 BTC Payment | Celooh Forex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #090d16;
+            --card-bg: rgba(17, 24, 39, 0.85);
+            --primary-glow: #38bdf8;
+            --accent-purple: #6366f1;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-white: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .pay-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .btc-address-box {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px dashed var(--primary-glow);
+            padding: 16px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            color: #f59e0b;
+            margin: 20px 0;
+        }
+
+        .btn-confirm {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="pay-card">
+        <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Complete $30 BTC Subscription</h2>
+        <p style="color: var(--text-muted); font-size: 14px;">Transfer exactly *$30 in Bitcoin (BTC)* to the deposit address below to activate your account trading bot.</p>
+
+        <div class="btc-address-box">
+            3NeNqMQ9Fr3iAw5vtfFKzWzyB1jFNbEvxt
+        </div>
+
+        <form method="POST" action="/confirm-payment/">
+            {% csrf_token %}
+            <div style="text-align: left; margin-bottom: 16px;">
+                <label style="font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Paste BTC Transaction Hash / ID</label>
+                <input type="text" name="btc_tx_hash" style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 10px; color: #fff; margin-top: 6px;" placeholder="e.g. 4a5e1e..." required>
+            </div>
+
+            <button type="submit" class="btn-confirm">I Have Paid $30 BTC — Activate Bot</button>
+        </form>
+    </div>
+
+</body>
+</html>
