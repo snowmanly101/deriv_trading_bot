@@ -35,7 +35,7 @@ def dashboard_view(request):
         
         # Handle Worker Process Spawning
         if bot_state_changed and is_bot_active and profile.deriv_api_token:
-            worker_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(_file_))), 'user_bot_worker.py')
+            worker_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user_bot_worker.py')
             subprocess.Popen(['python3', worker_path, str(request.user.id)])
             
         return redirect('dashboard')
