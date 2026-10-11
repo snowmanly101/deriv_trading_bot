@@ -13,8 +13,8 @@ django.setup()
 
 from dashboard.models import Profile
 
-# Deriv WebSocket Endpoint
-DERIV_WS_URL = "wss://ws.derivws.com/websockets/v3?app_id=1089"
+# Deriv WebSocket Endpoint (Updated to official binary domain)
+DERIV_WS_URL = "wss://ws.deriv.com/websockets/v3?app_id=1089"
 
 def calculate_ema(prices, period=200):
     """Calculates Exponential Moving Average."""
