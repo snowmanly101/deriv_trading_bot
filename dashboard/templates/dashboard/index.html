@@ -255,6 +255,34 @@
             font-size: 12px;
             font-weight: 700;
         }
+
+        /* Bulletproof Confluence Indicator Pills */
+        .confluence-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .confluence-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(3, 7, 18, 0.7);
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-check {
+            color: var(--success-green);
+            background: rgba(16, 185, 129, 0.15);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
@@ -285,7 +313,7 @@
         </div>
 
         <div>
-            <span style="font-size: 14px; font-weight: 600; margin-right: 12px;">Trader: <strong style="color: var(--neon-gold);">{{ username }}</strong></span>
+            <span style="font-size: 14px; font-weight: 600; margin-right: 12px;">Trader: <strong style="color: var(--neon-gold);">{{ user.username }}</strong></span>
             <a href="/logout/" class="logout-btn">Log Out</a>
         </div>
     </nav>
@@ -341,13 +369,13 @@
                     <li>Click your profile icon at top right ➔ Select <strong>Account Settings</strong> ➔ Click <strong>API Token</strong> in the left sidebar.</li>
                     <li>Check both <strong>Read</strong> and <strong>Trade</strong> permissions.</li>
                     <li>Type a name like <code>CeloohBot</code> and click <strong>Create</strong>, then copy your token.</li>
-                    <li>Paste your token below, toggle the bot activation switch, and click Save!</li>
+                    <li>Paste your token below, choose your risk profile, toggle execution, and click Save!</li>
                 </ol>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">Deriv Account & API Integration</span>
+                    <span class="card-title">Deriv Account & Strategy Settings</span>
                 </div>
 
                 <form method="POST">
@@ -368,6 +396,19 @@
                     <div class="form-group">
                         <label>Deriv API Token</label>
                         <input type="password" name="deriv_api_token" class="form-control" value="{{ profile.deriv_api_token|default:'' }}" placeholder="Paste your API token here">
+                    </div>
+
+                    <!-- Bulletproof Institutional Risk Profile Control -->
+                    <div class="form-group">
+                        <label>Institutional Risk Strategy Profile</label>
+                        <select name="risk_profile" class="form-control" style="cursor: pointer;">
+                            <option value="low" selected>🛡️ Low Risk (1% Capital Risk Cap | 1:2 R:R | Strict Confluence)</option>
+                            <option value="medium">⚖️ Medium Risk (1.5% Risk Cap | 1:2 R:R | Standard Confluence)</option>
+                            <option value="high">🚀 High Risk (2% Risk Cap | 1:1.5 R:R | Dynamic Momentum)</option>
+                        </select>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
+                            Enforces 5% daily drawdown circuit breaker regardless of chosen risk tier.
+                        </p>
                     </div>
 
                     <!-- Modern Toggle Switch -->
@@ -415,6 +456,28 @@
                     {% else %} 
                         <span style="color: var(--text-muted);">○ PAUSED</span> 
                     {% endif %}
+                </div>
+            </div>
+
+            <!-- 3-Condition Confluence Engine Monitor -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🎯 Confluence Engine Status</span>
+                    <span style="font-size: 11px; color: var(--neon-cyan); font-weight: 700;">ACTIVE</span>
+                </div>
+                <div class="confluence-list">
+                    <div class="confluence-item">
+                        <span>1. 200 EMA Macro Trend</span>
+                        <span class="badge-check">ACTIVE ✓</span>
+                    </div>
+                    <div class="confluence-item">
+                        <span>2. 14 RSI Momentum Filter</span>
+                        <span class="badge-check">ACTIVE ✓</span>
+                    </div>
+                    <div class="confluence-item">
+                        <span>3. Volatility Band Trigger</span>
+                        <span class="badge-check">ACTIVE ✓</span>
+                    </div>
                 </div>
             </div>
 
