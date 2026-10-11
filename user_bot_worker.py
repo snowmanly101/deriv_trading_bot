@@ -13,8 +13,8 @@ django.setup()
 
 from dashboard.models import Profile
 
-# Deriv WebSocket Endpoint (Updated to official binary domain)
-DERIV_WS_URL = "wss://ws.deriv.com/websockets/v3?app_id=1089"
+# Deriv WebSocket Gateway Endpoint
+DERIV_WS_URL = "wss://green.derivws.com/websockets/v3?app_id=1089"
 
 def calculate_ema(prices, period=200):
     """Calculates Exponential Moving Average."""
@@ -160,7 +160,7 @@ def run_bot(user_id):
         return
 
     starting_balance = 0.0
-    current_balance = 100.0  # Default fallback
+    current_balance = 100.0
 
     def on_message(ws, message):
         nonlocal starting_balance, current_balance
