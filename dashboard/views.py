@@ -1,10 +1,11 @@
+import subprocess
+import os
+import signal
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import Profile
-import subprocess
-import os
 
 @login_required(login_url='login')
 def dashboard_view(request):
@@ -21,13 +22,21 @@ def dashboard_view(request):
         if deriv_api_token:
             profile.deriv_api_token = deriv_api_token
             
+        # Check if bot state is changing
+        bot_state_changed = profile.is_bot_active != is_bot_active
         profile.is_bot_active = is_bot_active
         profile.save()
         
-        # Handle subprocess worker spawning based on bot state
-        if is_bot_active and profile.deriv_api_token:
-            # Example logic to trigger user_bot_worker.py process securely per user
-            pass
+        # Handle Worker Process Spawning / Termination
+        if bot_state_changed:
+            if is_bot_active and profile.deriv_api_token:
+                # Spawn worker script as an isolated background process
+                worker_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(_file_))), 'user_bot_worker.py')
+                subprocess.Popen(['python3', worker_path, str(request.user.id)])
+            else:
+                # When turned off, the worker script automatically checks db flag and exits itself,
+                # or you can implement a process kill tracker if needed.
+                pass
             
         return redirect('dashboard')
 
