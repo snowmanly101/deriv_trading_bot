@@ -234,8 +234,13 @@ def run_bot(user_id):
     def on_close(ws, close_status_code, close_msg):
         print(f"[*] WebSocket closed for user {user_id}.")
 
+    # WebSocket Client with Cloudflare-bypass headers
     ws = websocket.WebSocketApp(
         DERIV_WS_URL,
+        header={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Origin": "https://app.deriv.com"
+        },
         on_open=on_open,
         on_message=on_message,
         on_error=on_error,
