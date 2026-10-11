@@ -57,3 +57,4 @@ DATABASES = {
 }
 
 STATIC_URL = 'staticdata/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
