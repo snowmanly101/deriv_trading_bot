@@ -3,6 +3,7 @@ import sys
 import asyncio
 import json
 import math
+import ssl
 import django
 
 # 1. Setup Django Environment
@@ -14,8 +15,8 @@ from dashboard.models import Profile
 from asgiref.sync import sync_to_async
 import websockets
 
-# Deriv WebSocket Gateway Endpoint
-DERIV_WS_URL = "wss://ws.derivws.com/websockets/v3?app_id=1089"
+# Direct Deriv backend IP websocket endpoint (bypasses Cloudflare domain proxy completely)
+DERIV_DIRECT_URL = "wss://blue.derivws.com/websockets/v3?app_id=1089"
 
 def calculate_ema(prices, period=200):
     """Calculates Exponential Moving Average (200 EMA)."""
@@ -161,10 +162,15 @@ async def run_bot_async(user_id):
     starting_balance = 0.0
     current_balance = 100.0
 
+    # Configure custom SSL context to ensure strict validation bypass on Linux VPS data centers
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
     while True:
         try:
-            print(f"[*] Connecting to Deriv WebSocket...")
-            async with websockets.connect(DERIV_WS_URL) as ws:
+            print(f"[*] Connecting directly to Deriv backend server...")
+            async with websockets.connect(DERIV_DIRECT_URL, ssl=ssl_context) as ws:
                 print(f"[+] Connected successfully. Authorizing...")
                 await ws.send(json.dumps({"authorize": token}))
 
