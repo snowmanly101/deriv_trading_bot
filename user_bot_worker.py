@@ -1,10 +1,9 @@
 import os
 import sys
-import time
+import asyncio
 import json
-import websocket
-import django
 import math
+import django
 
 # Setup Django Environment to access the Database & Models
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -12,6 +11,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from dashboard.models import Profile
+import websockets
 
 # Deriv WebSocket Gateway Endpoint
 DERIV_WS_URL = "wss://ws.derivws.com/websockets/v3?app_id=1089"
@@ -108,7 +108,7 @@ def evaluate_triple_confluence(closes):
         
     return None
 
-def execute_deriv_trade(ws, signal, account_balance, risk_profile='low'):
+async def execute_deriv_trade(ws, signal, account_balance, risk_profile='low'):
     """
     Calculates stake based on user risk profile and places a live contract on Deriv.
     """
@@ -140,11 +140,11 @@ def execute_deriv_trade(ws, signal, account_balance, risk_profile='low'):
         }
     }
     
-    ws.send(json.dumps(trade_request))
+    await ws.send(json.dumps(trade_request))
     print(f"[+] EXECUTED LIVE {contract_type} trade with stake ${stake} ({risk_pct*100}% Risk Profile)")
 
-def run_bot(user_id):
-    print(f"[*] Starting bot worker for User ID: {user_id}")
+async def run_bot_async(user_id):
+    print(f"[*] Starting async bot worker for User ID: {user_id}")
     
     try:
         profile = Profile.objects.get(id=user_id)
@@ -162,92 +162,82 @@ def run_bot(user_id):
     starting_balance = 0.0
     current_balance = 100.0
 
-    def on_message(ws, message):
-        nonlocal starting_balance, current_balance
-        data = json.loads(message)
-        msg_type = data.get('msg_type')
-        
-        if msg_type == 'authorize':
-            if 'error' in data:
-                print(f"[!] Authorization failed: {data['error']['message']}")
-                ws.close()
-            else:
-                print(f"[+] Authorized successfully for account: {account_id}")
-                ws.send(json.dumps({"balance": 1, "subscribe": 1}))
-                ws.send(json.dumps({
-                    "ticks_history": "R_100",
-                    "adjust_start_time": 1,
-                    "count": 250,
-                    "end": "latest",
-                    "style": "candles",
-                    "granularity": 300
-                }))
+    # Custom headers to emulate standard browser connection
+    extra_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Origin": "https://app.deriv.com"
+    }
 
-        elif msg_type == 'balance':
-            if 'balance' in data:
-                current_balance = data['balance'].get('balance')
-                if starting_balance == 0.0:
-                    starting_balance = current_balance
-                
-                # 5% Daily Drawdown Circuit Breaker
-                current_daily_loss = starting_balance - current_balance
-                max_allowed_loss = starting_balance * 0.05
-                
-                if current_daily_loss >= max_allowed_loss:
-                    print(f"[!] CIRCUIT BREAKER TRIGGERED: Daily loss limit reached (${current_daily_loss:.2f}). Stopping bot.")
-                    profile.is_bot_active = False
-                    profile.save()
-                    ws.close()
+    while True:
+        try:
+            print(f"[*] Connecting to Deriv WebSocket...")
+            async with websockets.connect(DERIV_WS_URL, extra_headers=extra_headers) as ws:
+                print(f"[+] Connected successfully. Authorizing...")
+                await ws.send(json.dumps({"authorize": token}))
 
-        elif msg_type == 'candles':
-            candles = data.get('candles', [])
-            closes = [c['close'] for c in candles]
-            
-            profile.refresh_from_db()
-            if not profile.is_bot_active:
-                print(f"[*] Bot deactivated by user dashboard switch. Exiting worker.")
-                ws.close()
-                return
+                async for message in ws:
+                    data = json.loads(message)
+                    msg_type = data.get('msg_type')
 
-            signal = evaluate_triple_confluence(closes)
-            if signal:
-                print(f"[*] TRIPLE CONFLUENCE SIGNAL DETECTED: {signal} | Price: {closes[-1]}")
-                execute_deriv_trade(ws, signal, current_balance, risk_profile)
+                    if msg_type == 'authorize':
+                        if 'error' in data:
+                            print(f"[!] Authorization failed: {data['error']['message']}")
+                            return
+                        else:
+                            print(f"[+] Authorized successfully for account: {account_id}")
+                            await ws.send(json.dumps({"balance": 1, "subscribe": 1}))
+                            await ws.send(json.dumps({
+                                "ticks_history": "R_100",
+                                "adjust_start_time": 1,
+                                "count": 250,
+                                "end": "latest",
+                                "style": "candles",
+                                "granularity": 300
+                            }))
 
-        elif msg_type == 'history':
-            ws.send(json.dumps({"ticks": "R_100", "subscribe": 1}))
+                    elif msg_type == 'balance':
+                        if 'balance' in data:
+                            current_balance = data['balance'].get('balance')
+                            if starting_balance == 0.0:
+                                starting_balance = current_balance
+                            
+                            # 5% Daily Drawdown Circuit Breaker
+                            current_daily_loss = starting_balance - current_balance
+                            max_allowed_loss = starting_balance * 0.05
+                            
+                            if current_daily_loss >= max_allowed_loss:
+                                print(f"[!] CIRCUIT BREAKER TRIGGERED: Daily loss limit reached (${current_daily_loss:.2f}). Stopping bot.")
+                                profile.is_bot_active = False
+                                profile.save()
+                                return
 
-        elif msg_type == 'buy':
-            if 'error' in data:
-                print(f"[!] Trade Execution Error: {data['error']['message']}")
-            else:
-                contract_id = data['buy']['contract_id']
-                print(f"[SUCCESS] Contract Placed! Contract ID: {contract_id}")
+                    elif msg_type == 'candles':
+                        candles = data.get('candles', [])
+                        closes = [c['close'] for c in candles]
+                        
+                        profile.refresh_from_db()
+                        if not profile.is_bot_active:
+                            print(f"[*] Bot deactivated by user dashboard switch. Exiting worker.")
+                            return
 
-    def on_open(ws):
-        print(f"[*] Connected to Deriv WebSocket. Authorizing...")
-        ws.send(json.dumps({"authorize": token}))
+                        signal = evaluate_triple_confluence(closes)
+                        if signal:
+                            print(f"[*] TRIPLE CONFLUENCE SIGNAL DETECTED: {signal} | Price: {closes[-1]}")
+                            await execute_deriv_trade(ws, signal, current_balance, risk_profile)
 
-    def on_error(ws, error):
-        print(f"[!] WebSocket Error: {error}")
+                    elif msg_type == 'history':
+                        await ws.send(json.dumps({"ticks": "R_100", "subscribe": 1}))
 
-    def on_close(ws, close_status_code, close_msg):
-        print(f"[*] WebSocket closed for user {user_id}.")
+                    elif msg_type == 'buy':
+                        if 'error' in data:
+                            print(f"[!] Trade Execution Error: {data['error']['message']}")
+                        else:
+                            contract_id = data['buy']['contract_id']
+                            print(f"[SUCCESS] Contract Placed! Contract ID: {contract_id}")
 
-    # WebSocket Client with explicit Host and User-Agent headers to bypass Cloudflare 520
-    ws = websocket.WebSocketApp(
-        DERIV_WS_URL,
-        header=[
-            "Host: ws.derivws.com",
-            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Origin: https://app.deriv.com"
-        ],
-        on_open=on_open,
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close
-    )
-    ws.run_forever()
+        except Exception as e:
+            print(f"[!] Connection Error: {e}. Reconnecting in 5 seconds...")
+            await asyncio.sleep(5)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -255,4 +245,4 @@ if __name__ == "__main__":
         sys.exit(1)
     
     target_user_id = int(sys.argv[1])
-    run_bot(target_user_id)
+    asyncio.run(run_bot_async(target_user_id))
