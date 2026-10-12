@@ -14,7 +14,7 @@ from dashboard.models import Profile
 from asgiref.sync import sync_to_async
 import websockets
 
-# Deriv WebSocket Endpoint
+# Deriv WebSocket Gateway Endpoint
 DERIV_WS_URL = "wss://ws.derivws.com/websockets/v3?app_id=1089"
 
 def calculate_ema(prices, period=200):
@@ -161,16 +161,10 @@ async def run_bot_async(user_id):
     starting_balance = 0.0
     current_balance = 100.0
 
-    # Custom browser headers to clear Cloudflare filters
-    custom_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Origin": "https://app.deriv.com"
-    }
-
     while True:
         try:
             print(f"[*] Connecting to Deriv WebSocket...")
-            async with websockets.connect(DERIV_WS_URL, additional_headers=custom_headers) as ws:
+            async with websockets.connect(DERIV_WS_URL) as ws:
                 print(f"[+] Connected successfully. Authorizing...")
                 await ws.send(json.dumps({"authorize": token}))
 
