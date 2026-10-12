@@ -11,6 +11,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from dashboard.models import Profile
+from asgiref.sync import sync_to_async
 import websockets
 
 # Deriv WebSocket Gateway Endpoint
@@ -147,7 +148,7 @@ async def run_bot_async(user_id):
     print(f"[*] Starting async bot worker for User ID: {user_id}")
     
     try:
-        profile = Profile.objects.get(id=user_id)
+        profile = await sync_to_async(Profile.objects.get)(id=user_id)
         token = profile.deriv_api_token
         account_id = profile.deriv_account_id
         risk_profile = getattr(profile, 'risk_profile', 'low')
@@ -162,7 +163,6 @@ async def run_bot_async(user_id):
     starting_balance = 0.0
     current_balance = 100.0
 
-    # Custom headers to emulate standard browser connection
     extra_headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Origin": "https://app.deriv.com"
@@ -201,21 +201,20 @@ async def run_bot_async(user_id):
                             if starting_balance == 0.0:
                                 starting_balance = current_balance
                             
-                            # 5% Daily Drawdown Circuit Breaker
                             current_daily_loss = starting_balance - current_balance
                             max_allowed_loss = starting_balance * 0.05
                             
                             if current_daily_loss >= max_allowed_loss:
                                 print(f"[!] CIRCUIT BREAKER TRIGGERED: Daily loss limit reached (${current_daily_loss:.2f}). Stopping bot.")
                                 profile.is_bot_active = False
-                                profile.save()
+                                await sync_to_async(profile.save)()
                                 return
 
                     elif msg_type == 'candles':
                         candles = data.get('candles', [])
                         closes = [c['close'] for c in candles]
                         
-                        profile.refresh_from_db()
+                        await sync_to_async(profile.refresh_from_db)()
                         if not profile.is_bot_active:
                             print(f"[*] Bot deactivated by user dashboard switch. Exiting worker.")
                             return
