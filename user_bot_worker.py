@@ -5,7 +5,7 @@ import json
 import math
 import django
 
-# Setup Django Environment to access the Database & Models
+# 1. Setup Django Environment
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
@@ -14,11 +14,11 @@ from dashboard.models import Profile
 from asgiref.sync import sync_to_async
 import websockets
 
-# Deriv WebSocket Gateway Endpoint
+# Deriv WebSocket Endpoint
 DERIV_WS_URL = "wss://ws.derivws.com/websockets/v3?app_id=1089"
 
 def calculate_ema(prices, period=200):
-    """Calculates Exponential Moving Average."""
+    """Calculates Exponential Moving Average (200 EMA)."""
     if len(prices) < period:
         return [sum(prices) / len(prices)] * len(prices)
     
@@ -29,7 +29,7 @@ def calculate_ema(prices, period=200):
     return [ema[0]] * (period - 1) + ema
 
 def calculate_rsi(prices, period=14):
-    """Calculates Relative Strength Index."""
+    """Calculates Relative Strength Index (14 RSI)."""
     if len(prices) < period + 1:
         return [50.0] * len(prices)
     
@@ -56,7 +56,7 @@ def calculate_rsi(prices, period=14):
     return rsi_list
 
 def calculate_bollinger_bands(prices, period=20, std_dev=2):
-    """Calculates Bollinger Bands (Upper and Lower)."""
+    """Calculates Bollinger Bands (20 Period, 2 StdDev)."""
     if len(prices) < period:
         return prices, prices
     
@@ -110,9 +110,7 @@ def evaluate_triple_confluence(closes):
     return None
 
 async def execute_deriv_trade(ws, signal, account_balance, risk_profile='low'):
-    """
-    Calculates stake based on user risk profile and places a live contract on Deriv.
-    """
+    """Calculates stake based on user risk profile and places a live trade on Deriv."""
     risk_percentages = {
         'low': 0.01,     # 1% Risk
         'medium': 0.015, # 1.5% Risk
@@ -163,7 +161,8 @@ async def run_bot_async(user_id):
     starting_balance = 0.0
     current_balance = 100.0
 
-    extra_headers = {
+    # Custom browser headers to clear Cloudflare filters
+    custom_headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Origin": "https://app.deriv.com"
     }
@@ -171,7 +170,7 @@ async def run_bot_async(user_id):
     while True:
         try:
             print(f"[*] Connecting to Deriv WebSocket...")
-            async with websockets.connect(DERIV_WS_URL, additional_headers=extra_headers) as ws:
+            async with websockets.connect(DERIV_WS_URL, additional_headers=custom_headers) as ws:
                 print(f"[+] Connected successfully. Authorizing...")
                 await ws.send(json.dumps({"authorize": token}))
 
@@ -201,6 +200,7 @@ async def run_bot_async(user_id):
                             if starting_balance == 0.0:
                                 starting_balance = current_balance
                             
+                            # 5% Daily Drawdown Circuit Breaker
                             current_daily_loss = starting_balance - current_balance
                             max_allowed_loss = starting_balance * 0.05
                             
