@@ -171,7 +171,7 @@ async def run_bot_async(user_id):
     while True:
         try:
             print(f"[*] Connecting to Deriv WebSocket...")
-            async with websockets.connect(DERIV_WS_URL, extra_headers=extra_headers) as ws:
+            async with websockets.connect(DERIV_WS_URL, additional_headers=extra_headers) as ws:
                 print(f"[+] Connected successfully. Authorizing...")
                 await ws.send(json.dumps({"authorize": token}))
 
