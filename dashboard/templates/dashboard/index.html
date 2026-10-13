@@ -236,9 +236,9 @@
         }
 
         .trial-badge {
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            color: var(--neon-gold);
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: var(--neon-cyan);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
@@ -283,7 +283,6 @@
             <div class="ticker-item">USD/JPY <span>154.20</span> <span class="ticker-red">-0.10% ▼</span></div>
             <div class="ticker-item">AUD/USD <span>0.6580</span> <span class="ticker-green">+0.32% ▲</span></div>
             <div class="ticker-item">XAU/USD (Gold) <span>2385.10</span> <span class="ticker-green">+0.85% ▲</span></div>
-            <!-- Seamless loop clone -->
             <div class="ticker-item">EUR/USD <span>1.0854</span> <span class="ticker-green">+0.24% ▲</span></div>
             <div class="ticker-item">GBP/USD <span>1.2641</span> <span class="ticker-green">+0.15% ▲</span></div>
         </div>
@@ -348,14 +347,15 @@
                 </div>
             </div>
 
-            <!-- Beginner Guidance Box -->
+            <!-- OANDA Guidance Box -->
             <div class="guide-box">
                 <h4>💡 Step-by-Step Guide: How to Link Your OANDA Account</h4>
                 <ol>
-                    <li>Log into your <strong>OANDA Practice or Live</strong> account portal.</li>
-                    <li>Go to <strong>My Account</strong> ➔ <strong>Manage API Access</strong> to generate your <strong>Personal Access Token</strong>.</li>
-                    <li>Copy your account ID format (e.g., <code>101-004-xxxxxxx-001</code>).</li>
-                    <li>Paste your Account ID and Token below, toggle the bot switch ON, and click Save!</li>
+                    <li>Log into your <strong>OANDA Practice (Demo)</strong> or <strong>Live</strong> account portal.</li>
+                    <li>Navigate to your profile / account settings and select <strong>Manage API Access</strong>.</li>
+                    <li>Click <strong>Generate Token</strong> to create your Personal Access Token.</li>
+                    <li>Copy your full <strong>Account ID</strong> (formatted like <code>101-004-xxxxxxx-001</code>).</li>
+                    <li>Select your environment, paste your credentials below, toggle the bot switch ON, and click Save!</li>
                 </ol>
             </div>
 
@@ -412,7 +412,7 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">System Status</span>
-                    <span class="trial-badge">● OANDA API Active</span>
+                    <span class="trial-badge">● OANDA REST API</span>
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-muted);">ACCOUNT STATUS</div>
