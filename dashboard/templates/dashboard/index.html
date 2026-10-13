@@ -140,6 +140,23 @@
         .stat-val.loss { color: var(--danger-red); }
         .stat-val.gold { color: var(--neon-gold); }
 
+        /* Market Intelligence Directives Box */
+        .intel-box {
+            background: rgba(3, 7, 18, 0.85);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .intel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .intel-badge { background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success-green); color: var(--success-green); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+
+        .intel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .intel-item { background: rgba(11, 19, 38, 0.6); padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .intel-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .intel-value { font-size: 13px; font-weight: 700; color: var(--neon-cyan); }
+
         .guide-box {
             background: rgba(3, 7, 18, 0.8);
             border: 1px solid var(--neon-cyan);
@@ -317,6 +334,35 @@
 
             <div style="height: 24px;"></div>
 
+            <!-- Daily Market Intelligence & Directives Card -->
+            <div class="intel-box">
+                <div class="intel-header">
+                    <h4 style="font-size: 15px; font-weight: 800; color: var(--text-white);">📰 Daily Market Intelligence & News Directives</h4>
+                    <span class="intel-badge">● LIVE SENTIMENT</span>
+                </div>
+                
+                <div class="intel-grid">
+                    <div class="intel-item">
+                        <div class="intel-title">Featured Asset Focus</div>
+                        <div class="intel-value">{{ market_intel.top_asset }}</div>
+                    </div>
+                    <div class="intel-item">
+                        <div class="intel-title">24H Macro Bias</div>
+                        <div class="intel-value" style="color: var(--success-green);">{{ market_intel.market_bias }}</div>
+                    </div>
+                </div>
+
+                <div class="intel-item" style="margin-bottom: 12px;">
+                    <div class="intel-title">Economic News Focus</div>
+                    <p style="font-size: 13px; font-weight: 600; color: var(--text-white); margin-top: 4px;">{{ market_intel.news_event }}</p>
+                </div>
+
+                <div class="intel-item">
+                    <div class="intel-title">Strategic Reason & Execution Rule</div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.6;">{{ market_intel.trading_reason }}</p>
+                </div>
+            </div>
+
             <!-- Performance Metrics Dashboard -->
             <div class="card">
                 <div class="card-header">
@@ -355,7 +401,7 @@
                     <li>Navigate to your profile / account settings and select <strong>Manage API Access</strong>.</li>
                     <li>Click <strong>Generate Token</strong> to create your Personal Access Token.</li>
                     <li>Copy your full <strong>Account ID</strong> (formatted like <code>101-004-xxxxxxx-001</code>).</li>
-                    <li>Select your environment, paste your credentials below, toggle the bot switch ON, and click Save!</li>
+                    <li>Select your environment and risk profile, paste your credentials below, toggle the bot switch ON, and click Save!</li>
                 </ol>
             </div>
 
@@ -372,6 +418,15 @@
                         <select name="oanda_environment" class="form-control" style="cursor: pointer;">
                             <option value="practice" {% if profile.oanda_environment == 'practice' %}selected{% endif %}>Practice (Demo Account)</option>
                             <option value="live" {% if profile.oanda_environment == 'live' %}selected{% endif %}>Live (Real Money Account)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Risk Management Profile</label>
+                        <select name="risk_level" class="form-control" style="cursor: pointer;">
+                            <option value="low" {% if profile.risk_level == 'low' %}selected{% endif %}>Low Risk (0.5% - Conservative Capital Protection)</option>
+                            <option value="medium" {% if profile.risk_level == 'medium' or not profile.risk_level %}selected{% endif %}>Medium Risk (1.5% - Standard Balanced Confluence)</option>
+                            <option value="high" {% if profile.risk_level == 'high' %}selected{% endif %}>High Risk (3.0% - Maximum Volatility Scaling)</option>
                         </select>
                     </div>
 
@@ -393,7 +448,7 @@
                     <div class="switch-container">
                         <div>
                             <div style="font-weight: 700; font-size: 14px;">Automated Bot Engine</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for OANDA Forex pairs</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for OANDA Forex pairs & Gold</div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="botToggle" name="is_bot_active" 
@@ -438,11 +493,11 @@
                 </div>
                 <div class="confluence-list">
                     <div class="confluence-item">
-                        <span>1. 200 EMA Macro Trend</span>
+                        <span>1. 24H Macro Trend Gate</span>
                         <span class="badge-check">ACTIVE ✓</span>
                     </div>
                     <div class="confluence-item">
-                        <span>2. 14 RSI Momentum Filter</span>
+                        <span>2. 200 EMA & RSI Filter</span>
                         <span class="badge-check">ACTIVE ✓</span>
                     </div>
                     <div class="confluence-item">
@@ -483,7 +538,7 @@
         }
 
         const traders = ['@Alex_M', '@David_K', '@Celooh_VIP', '@Michael_R', '@Sarah_T'];
-        const pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD'];
+        const pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'XAU/USD'];
 
         function addLiveTrade() {
             const feed = document.getElementById('tradeFeed');
