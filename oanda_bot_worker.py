@@ -11,6 +11,9 @@ django.setup()
 
 from dashboard.models import Profile
 
+# Assets you love to trade
+ASSET_LIST = ["EUR_USD", "XAU_USD"]
+
 def calculate_sma(prices, period):
     if len(prices) < period:
         return None
@@ -76,7 +79,7 @@ def get_oanda_base_url(environment):
         return "https://api-fxtrade.oanda.com/v3"
     return "https://api-fxpractice.oanda.com/v3"
 
-def fetch_candles(base_url, headers, instrument="EUR_USD", count=250, granularity="M5"):
+def fetch_candles(base_url, headers, instrument, count=250, granularity="M5"):
     url = f"{base_url}/instruments/{instrument}/candles"
     params = {
         "count": count,
@@ -90,10 +93,10 @@ def fetch_candles(base_url, headers, instrument="EUR_USD", count=250, granularit
             candles = [float(c['mid']['c']) for c in data.get('candles', []) if c.get('complete', True)]
             return candles
     except Exception as e:
-        print(f"[ERROR] Failed to fetch candles: {e}")
+        print(f"[ERROR] Failed to fetch {instrument} candles: {e}")
     return []
 
-def place_order(base_url, headers, account_id, instrument="EUR_USD", units=1000):
+def place_order(base_url, headers, account_id, instrument, units):
     url = f"{base_url}/accounts/{account_id}/orders"
     payload = {
         "order": {
@@ -107,10 +110,10 @@ def place_order(base_url, headers, account_id, instrument="EUR_USD", units=1000)
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         if response.status_code in [200, 201]:
-            print(f"[SUCCESS] Order executed for {units} units of {instrument}")
+            print(f"✅ [SUCCESS] Executed order for {units} units of {instrument}")
             return True
         else:
-            print(f"[FAILED] Order failed: {response.text}")
+            print(f"❌ [FAILED] Order rejected for {instrument}: {response.text}")
     except Exception as e:
         print(f"[ERROR] Exception placing order: {e}")
     return False
@@ -118,51 +121,61 @@ def place_order(base_url, headers, account_id, instrument="EUR_USD", units=1000)
 def run_bot_cycle():
     active_profiles = Profile.objects.filter(is_bot_active=True)
     if not active_profiles.exists():
-        print("[INFO] No active profiles found with bot toggled ON.")
         return
 
     for profile in active_profiles:
         if not profile.oanda_account_id or not profile.oanda_api_token:
-            print(f"[SKIP] User {profile.user.username} missing OANDA credentials.")
             continue
 
         base_url = get_oanda_base_url(profile.oanda_environment)
         headers = get_oanda_headers(profile.oanda_api_token)
-        
-        prices = fetch_candles(base_url, headers, instrument="EUR_USD")
-        if len(prices) < 200:
-            print(f"[SKIP] Insufficient candles fetched for {profile.user.username}")
-            continue
 
-        current_price = prices[-1]
-        ema_200 = calculate_ema(prices, 200)
-        rsi_14 = calculate_rsi(prices, 14)
-        upper_bb, lower_bb = calculate_bollinger_bands(prices, 20)
+        # Loop through your favorite assets: EUR/USD and XAU/USD
+        for instrument in ASSET_LIST:
+            # 1. Fetch 24-hour daily trend context
+            daily_prices = fetch_candles(base_url, headers, instrument=instrument, count=10, granularity="D")
+            macro_trend = "BULLISH"
+            if len(daily_prices) >= 2:
+                if daily_prices[-1] < daily_prices[-2]:
+                    macro_trend = "BEARISH"
 
-        if None in (ema_200, rsi_14, upper_bb, lower_bb):
-            continue
+            # 2. Fetch short-term M5 candles for precise entry setup
+            prices = fetch_candles(base_url, headers, instrument=instrument, count=250, granularity="M5")
+            if len(prices) < 200:
+                continue
 
-        print(f"[{profile.user.username}] Price: {current_price:.5f} | EMA200: {ema_200:.5f} | RSI: {rsi_14:.2f} | Lower BB: {lower_bb:.5f} | Upper BB: {upper_bb:.5f}")
+            current_price = prices[-1]
+            ema_200 = calculate_ema(prices, 200)
+            rsi_14 = calculate_rsi(prices, 14)
+            upper_bb, lower_bb = calculate_bollinger_bands(prices, 20)
 
-        # BUY CONFLUENCE: Price > 200 EMA (Uptrend) AND RSI < 35 (Oversold) AND Price <= Lower BB
-        if current_price > ema_200 and rsi_14 < 35 and current_price <= lower_bb:
-            print(f"🎯 [BUY SIGNAL] Executing Buy for {profile.user.username}")
-            if place_order(base_url, headers, profile.oanda_account_id, units=1000):
-                profile.total_trades = (profile.total_trades or 0) + 1
-                profile.save()
+            if None in (ema_200, rsi_14, upper_bb, lower_bb):
+                continue
 
-        # SELL CONFLUENCE: Price < 200 EMA (Downtrend) AND RSI > 65 (Overbought) AND Price >= Upper BB
-        elif current_price < ema_200 and rsi_14 > 65 and current_price >= upper_bb:
-            print(f"🎯 [SELL SIGNAL] Executing Sell for {profile.user.username}")
-            if place_order(base_url, headers, profile.oanda_account_id, units=-1000):
-                profile.total_trades = (profile.total_trades or 0) + 1
-                profile.save()
+            print(f"[{profile.user.username}] {instrument} | Trend: {macro_trend} | Price: {current_price} | RSI: {rsi_14:.1f}")
+
+            # 3. Execution Logic with 24H Trend Alignment
+            # BUY: Macro is Bullish AND Price > 200 EMA AND RSI Oversold (< 35) AND touches Lower BB
+            if macro_trend == "BULLISH" and current_price > ema_200 and rsi_14 < 35 and current_price <= lower_bb:
+                units = 1000 if instrument == "EUR_USD" else 1  # Standard sizing adjustment for Gold vs Forex
+                print(f"🎯 [BUY SIGNAL] {instrument} for {profile.user.username}")
+                if place_order(base_url, headers, profile.oanda_account_id, instrument, units=units):
+                    profile.total_trades = (profile.total_trades or 0) + 1
+                    profile.save()
+
+            # SELL: Macro is Bearish AND Price < 200 EMA AND RSI Overbought (> 65) AND touches Upper BB
+            elif macro_trend == "BEARISH" and current_price < ema_200 and rsi_14 > 65 and current_price >= upper_bb:
+                units = -1000 if instrument == "EUR_USD" else -1
+                print(f"🎯 [SELL SIGNAL] {instrument} for {profile.user.username}")
+                if place_order(base_url, headers, profile.oanda_account_id, instrument, units=units):
+                    profile.total_trades = (profile.total_trades or 0) + 1
+                    profile.save()
 
 if __name__ == "__main__":
-    print("🚀 OANDA Forex Engine Worker Started...")
+    print("🚀 Multi-Asset OANDA Forex & Gold Engine Started...")
     while True:
         try:
             run_bot_cycle()
         except Exception as e:
             print(f"[UNHANDLED EXCEPTION] {e}")
-        time.sleep(15)  # Poll market every 15 seconds
+        time.sleep(15)
