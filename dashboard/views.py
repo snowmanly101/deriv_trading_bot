@@ -1,3 +1,4 @@
+import requests
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -34,7 +35,7 @@ def custom_logout_view(request):
 def dashboard_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
     
-    # Daily Market Intelligence & News Directives Data
+    # Default bulletproof fallback market intelligence
     market_intelligence = {
         'top_asset': 'XAU/USD (Gold) & EUR/USD',
         'market_bias': 'Bullish Confluence',
@@ -43,6 +44,20 @@ def dashboard_view(request):
         'bot_status_directive': 'Active - Multi-asset scanner analyzing 15s intervals with risk controls.'
     }
     
+    try:
+        # Optional: Fetch live financial news sentiment headlines (e.g., general market news or forex updates)
+        # Using a public or free endpoint structure safely wrapped in try/except to prevent any disruption
+        response = requests.get("https://finnhub.io/api/v1/news?category=forex&token=sandbox_dummy_token", timeout=3)
+        if response.status_code == 200:
+            news_data = response.json()
+            if news_data and isinstance(news_data, list) and len(news_data) > 0:
+                latest_headline = news_data[0].get('headline', '')
+                if latest_headline:
+                    market_intelligence['news_event'] = f"Live Feed: {latest_headline}"
+    except Exception:
+        # Failsafe: Keeps default professional briefing active if network/API is restricted
+        pass
+
     return render(request, 'dashboard/index.html', {
         'profile': profile,
         'market_intel': market_intelligence
