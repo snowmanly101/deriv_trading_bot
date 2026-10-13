@@ -79,9 +79,7 @@
             transition: all 0.2s ease;
         }
 
-        .logout-btn:hover {
-            background: rgba(239, 68, 68, 0.3);
-        }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.3); }
 
         .main-container {
             max-width: 1240px;
@@ -166,13 +164,6 @@
             font-size: 14px;
         }
 
-        .form-control:read-only {
-            background: rgba(15, 23, 42, 0.6);
-            border-color: rgba(255, 255, 255, 0.1);
-            color: var(--text-muted);
-            cursor: not-allowed;
-        }
-
         /* Modern Switch Toggle */
         .switch-container {
             display: flex;
@@ -217,7 +208,6 @@
 
         input:checked + .slider { background-color: var(--success-green); }
         input:checked + .slider:before { transform: translateX(24px); }
-        input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
 
         .btn-save {
             width: 100%;
@@ -234,7 +224,6 @@
 
         .btn-save:hover { opacity: 0.95; }
 
-        /* Trade Feed Item Styling */
         .trade-feed-list { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; }
         .trade-card {
             background: rgba(16, 185, 129, 0.08);
@@ -256,7 +245,6 @@
             font-weight: 700;
         }
 
-        /* Bulletproof Confluence Indicator Pills */
         .confluence-list {
             display: flex;
             flex-direction: column;
@@ -295,7 +283,6 @@
             <div class="ticker-item">USD/JPY <span>154.20</span> <span class="ticker-red">-0.10% ▼</span></div>
             <div class="ticker-item">AUD/USD <span>0.6580</span> <span class="ticker-green">+0.32% ▲</span></div>
             <div class="ticker-item">XAU/USD (Gold) <span>2385.10</span> <span class="ticker-green">+0.85% ▲</span></div>
-            <div class="ticker-item">Volatility 100 Index <span>4821.30</span> <span class="ticker-green">+1.12% ▲</span></div>
             <!-- Seamless loop clone -->
             <div class="ticker-item">EUR/USD <span>1.0854</span> <span class="ticker-green">+0.24% ▲</span></div>
             <div class="ticker-item">GBP/USD <span>1.2641</span> <span class="ticker-green">+0.15% ▲</span></div>
@@ -324,8 +311,8 @@
         <div>
             <div class="hero-banner">
                 <div>
-                    <h2>Automated Deriv & MT5 Forex Engine</h2>
-                    <p style="color: var(--text-muted); font-size: 13px;">Active Plan: 5-Day Free Trial ($30/Mo BTC Subscription thereafter)</p>
+                    <h2>Automated OANDA Forex Engine</h2>
+                    <p style="color: var(--text-muted); font-size: 13px;">Primary Broker Platform: OANDA REST API Connection</p>
                 </div>
             </div>
 
@@ -363,64 +350,54 @@
 
             <!-- Beginner Guidance Box -->
             <div class="guide-box">
-                <h4>💡 Step-by-Step Guide: How to Link Your Deriv API Token</h4>
+                <h4>💡 Step-by-Step Guide: How to Link Your OANDA Account</h4>
                 <ol>
-                    <li>Log into your account at <strong>Deriv.com</strong> or <strong>app.deriv.com</strong>.</li>
-                    <li>Click your profile icon at top right ➔ Select <strong>Account Settings</strong> ➔ Click <strong>API Token</strong> in the left sidebar.</li>
-                    <li>Check both <strong>Read</strong> and <strong>Trade</strong> permissions.</li>
-                    <li>Type a name like <code>CeloohBot</code> and click <strong>Create</strong>, then copy your token.</li>
-                    <li>Paste your token below, choose your risk profile, toggle execution, and click Save!</li>
+                    <li>Log into your <strong>OANDA Practice or Live</strong> account portal.</li>
+                    <li>Go to <strong>My Account</strong> ➔ <strong>Manage API Access</strong> to generate your <strong>Personal Access Token</strong>.</li>
+                    <li>Copy your account ID format (e.g., <code>101-004-xxxxxxx-001</code>).</li>
+                    <li>Paste your Account ID and Token below, toggle the bot switch ON, and click Save!</li>
                 </ol>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">Deriv Account & Strategy Settings</span>
+                    <span class="card-title">OANDA Broker & Strategy Settings</span>
                 </div>
 
-                <form method="POST">
+                <form method="POST" action="{% url 'update_broker_settings' %}">
                     {% csrf_token %}
+                    
                     <div class="form-group">
-                        <label>Deriv / MT5 Account ID (CR Number)</label>
-                        <input type="text" name="deriv_account_id" class="form-control" 
-                               value="{{ profile.deriv_account_id|default:'' }}" 
-                               placeholder="e.g. CR1234567" 
-                               {% if profile.deriv_account_id %}readonly{% endif %}>
-                        {% if profile.deriv_account_id %}
-                            <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
-                                🔒 Registered to your 5-day trial session. Account IDs are locked to prevent trial abuse.
-                            </p>
-                        {% endif %}
-                    </div>
-
-                    <div class="form-group">
-                        <label>Deriv API Token</label>
-                        <input type="password" name="deriv_api_token" class="form-control" value="{{ profile.deriv_api_token|default:'' }}" placeholder="Paste your API token here">
-                    </div>
-
-                    <!-- Bulletproof Institutional Risk Profile Control -->
-                    <div class="form-group">
-                        <label>Institutional Risk Strategy Profile</label>
-                        <select name="risk_profile" class="form-control" style="cursor: pointer;">
-                            <option value="low" selected>🛡️ Low Risk (1% Capital Risk Cap | 1:2 R:R | Strict Confluence)</option>
-                            <option value="medium">⚖️ Medium Risk (1.5% Risk Cap | 1:2 R:R | Standard Confluence)</option>
-                            <option value="high">🚀 High Risk (2% Risk Cap | 1:1.5 R:R | Dynamic Momentum)</option>
+                        <label>OANDA Environment</label>
+                        <select name="oanda_environment" class="form-control" style="cursor: pointer;">
+                            <option value="practice" {% if profile.oanda_environment == 'practice' %}selected{% endif %}>Practice (Demo Account)</option>
+                            <option value="live" {% if profile.oanda_environment == 'live' %}selected{% endif %}>Live (Real Money Account)</option>
                         </select>
-                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
-                            Enforces 5% daily drawdown circuit breaker regardless of chosen risk tier.
-                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>OANDA Account ID</label>
+                        <input type="text" name="oanda_account_id" class="form-control" 
+                               value="{{ profile.oanda_account_id|default:'' }}" 
+                               placeholder="e.g. 101-004-12345678-001" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>OANDA API Personal Access Token</label>
+                        <input type="password" name="oanda_api_token" class="form-control" 
+                               value="{{ profile.oanda_api_token|default:'' }}" 
+                               placeholder="Paste your OANDA API token here" required>
                     </div>
 
                     <!-- Modern Toggle Switch -->
                     <div class="switch-container">
                         <div>
                             <div style="font-weight: 700; font-size: 14px;">Automated Bot Engine</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for Forex and Volatility Index strategies</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for OANDA Forex pairs</div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="botToggle" name="is_bot_active" 
-                                   {% if profile.is_bot_active and profile.is_trial_active %}checked{% endif %} 
-                                   {% if not profile.is_trial_active %}disabled{% endif %}>
+                                   {% if profile.is_bot_active %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -435,23 +412,17 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">System Status</span>
-                    <span class="trial-badge">
-                        {% if profile.has_paid_subscription %}
-                            ● VIP Paid ($30/Mo)
-                        {% else %}
-                            🎁 Trial: {{ profile.trial_days_remaining }} Days Left
-                        {% endif %}
-                    </span>
+                    <span class="trial-badge">● OANDA API Active</span>
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-muted);">ACCOUNT STATUS</div>
                 <div style="font-size: 15px; font-weight: 700; color: var(--neon-gold); margin: 4px 0 16px 0;">
-                    {% if profile.deriv_account_id %} Active ({{ profile.deriv_account_id }}) {% else %} Pending API Token Setup {% endif %}
+                    {% if profile.oanda_account_id %} Connected ({{ profile.oanda_account_id }}) {% else %} Pending OANDA Setup {% endif %}
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-muted);">BOT ALGORITHM</div>
                 <div style="font-size: 15px; font-weight: 700; margin-top: 4px;" id="botStatusDisplay">
-                    {% if profile.is_bot_active and profile.is_trial_active %} 
+                    {% if profile.is_bot_active %} 
                         <span style="color: var(--success-green);">● RUNNING LIVE</span> 
                     {% else %} 
                         <span style="color: var(--text-muted);">○ PAUSED</span> 
@@ -475,7 +446,7 @@
                         <span class="badge-check">ACTIVE ✓</span>
                     </div>
                     <div class="confluence-item">
-                        <span>3. Volatility Band Trigger</span>
+                        <span>3. Bollinger Band Trigger</span>
                         <span class="badge-check">ACTIVE ✓</span>
                     </div>
                 </div>
@@ -498,7 +469,6 @@
 
     <!-- Interactive Toggle UI & Live Execution Stream Script -->
     <script>
-        // Update Bot Status Text live when toggle is clicked
         const botToggle = document.getElementById('botToggle');
         const botStatusDisplay = document.getElementById('botStatusDisplay');
 
@@ -512,9 +482,8 @@
             });
         }
 
-        // Live Execution Stream simulation
         const traders = ['@Alex_M', '@David_K', '@Celooh_VIP', '@Michael_R', '@Sarah_T'];
-        const pairs = ['EUR/USD', 'XAU/USD (Gold)', 'GBP/USD', 'Volatility 100', 'USD/JPY'];
+        const pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD'];
 
         function addLiveTrade() {
             const feed = document.getElementById('tradeFeed');
