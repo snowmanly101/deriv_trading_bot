@@ -9,6 +9,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# CSRF Trusted Origins for Domain & SSL Support
+CSRF_TRUSTED_ORIGINS = [
+    'https://celoohforextrading.com',
+    'https://www.celoohforextrading.com',
+    'http://celoohforextrading.com',
+    'http://www.celoohforextrading.com',
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,7 +48,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',  # <-- Ensure this line is here
+                'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -58,3 +66,8 @@ DATABASES = {
 
 STATIC_URL = 'staticdata/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Authentication & Redirect Settings
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
+LOGIN_URL = '/login/'
