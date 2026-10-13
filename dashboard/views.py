@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from .models import Profile
 
 def landing_view(request):
@@ -25,6 +25,10 @@ def signup_view(request):
 
 def payment_view(request):
     return render(request, 'dashboard/payment.html')
+
+def custom_logout_view(request):
+    logout(request)
+    return redirect('login')
 
 @login_required
 def dashboard_view(request):
