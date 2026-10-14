@@ -25,8 +25,37 @@ def send_telegram_alert(message):
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"}
         requests.post(url, json=payload, timeout=5)
     except Exception as e:
-        print(f"[TELEGRAM ERROR] {e}")
+        print(f"[TELEGRAM ERROR] {e}", flush=True)
 
+# ==========================================
+# 1. ECONOMIC NEWS GUARD (Daily News Filter)
+# ==========================================
+def is_high_impact_news_imminent():
+    """
+    Checks if high-impact USD or EUR news is scheduled within the next 30 minutes.
+    """
+    try:
+        response = requests.get("https://nfs.faireconomy.media/ff_calendar_thisweek.json", timeout=5)
+        if response.status_code == 200:
+            events = response.json()
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            for event in events:
+                if event.get('impact') == 'High' and event.get('country') in ['USD', 'EUR']:
+                    event_date_str = event.get('date', '').replace('Z', '+00:00')
+                    if event_date_str:
+                        event_time = datetime.fromisoformat(event_date_str)
+                        time_diff_minutes = (event_time - now).total_seconds() / 60
+                        if -30 <= time_diff_minutes <= 30:
+                            print(f"🚨 [NEWS GUARD] Pausing trading due to high-impact news: {event.get('title')}", flush=True)
+                            return True
+    except Exception as e:
+        print(f"[NEWS GUARD WARNING] Could not fetch calendar feed: {e}", flush=True)
+    return False
+
+# ==========================================
+# 2. TECHNICAL INDICATORS & ATR CALCULATION
+# ==========================================
 def calculate_ema(prices, period):
     if len(prices) < period:
         return None
@@ -46,7 +75,7 @@ def calculate_rsi(prices, period=14):
             gains.append(change)
             losses.append(0)
         else:
-            gains.append(abs(change))
+            gains.append(0)
             losses.append(abs(change))
             
     avg_gain = sum(gains[:period]) / period
@@ -64,48 +93,42 @@ def calculate_rsi(prices, period=14):
     rs = avg_gain / avg_loss
     return 100 - (100 / (1 + rs))
 
-def get_oanda_headers(api_token):
-    return {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_token}"
-    }
+def calculate_atr(candles, period=14):
+    """
+    Calculates Average True Range (ATR) for dynamic stop loss and position sizing.
+    """
+    if len(candles) < period + 1:
+        return 0.0010 # default fallback
+    tr_list = []
+    for i in range(1, len(candles)):
+        high = candles[i]['high']
+        low = candles[i]['low']
+        prev_close = candles[i-1]['close']
+        tr = max(high - low, abs(high - prev_close), abs(low - prev_close))
+        tr_list.append(tr)
+    return sum(tr_list[-period:]) / period
 
-def get_oanda_base_url(environment):
-    if environment == 'live':
-        return "https://api-fxtrade.oanda.com/v3"
-    return "https://api-fxpractice.oanda.com/v3"
-
-def fetch_full_candles(base_url, headers, instrument, count=50, granularity="M5"):
-    url = f"{base_url}/instruments/{instrument}/candles"
-    params = {"count": count, "granularity": granularity, "price": "M"}
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            raw_candles = data.get('candles', [])
-            parsed = []
-            for c in raw_candles:
-                if c.get('complete', True):
-                    mid = c['mid']
-                    parsed.append({
-                        'open': float(mid['o']),
-                        'high': float(mid['h']),
-                        'low': float(mid['l']),
-                        'close': float(mid['c'])
-                    })
-            return parsed
-    except Exception as e:
-        print(f"[ERROR] Candle fetch failed for {instrument}: {e}")
-    return []
-
+# ==========================================
+# 3. ADVANCED MARKET STRUCTURE (HH, LH, HL, LL)
+# ==========================================
 def analyze_market_structure(candles):
-    if len(candles) < 4:
+    """
+    Detects Higher Highs (HH), Higher Lows (HL), Lower Highs (LH), and Lower Lows (LL)
+    """
+    if len(candles) < 6:
         return "NEUTRAL"
-    c1, c2, c3, c4 = candles[-4], candles[-3], candles[-2], candles[-1]
-    if c4['high'] > c3['high'] and c3['high'] > c2['high'] and c4['low'] > c3['low'] and c3['low'] > c2['low']:
-        return "BULLISH_STRUCTURE"
-    if c4['high'] < c3['high'] and c3['high'] < c2['high'] and c4['low'] < c3['low'] and c3['low'] < c2['low']:
-        return "BEARISH_STRUCTURE"
+    
+    highs = [c['high'] for c in candles[-6:]]
+    lows = [c['low'] for c in candles[-6:]]
+    
+    # Check recent pivot progression
+    h1, h2 = highs[-3], highs[-1]
+    l1, l2 = lows[-3], lows[-1]
+    
+    if h2 > h1 and l2 > l1:
+        return "BULLISH_HH_HL"
+    elif h2 < h1 and l2 < l1:
+        return "BEARISH_LH_LL"
     return "NEUTRAL"
 
 def check_candlestick_patterns(candles):
@@ -133,25 +156,101 @@ def check_candlestick_patterns(candles):
             return "BEARISH_ENGULFING"
     return "NONE"
 
-def place_oanda_order(profile, instrument, direction, current_price):
-    risk_level = getattr(profile, 'risk_level', 'medium')
-    if instrument == "XAU_USD":
-        sl_distance = 5.0 if risk_level == 'low' else (3.0 if risk_level == 'medium' else 2.0)
-        tp_distance = sl_distance * 2.0
-        units = 1 if risk_level == 'low' else (2 if risk_level == 'medium' else 3)
-    else:
-        sl_distance = 0.0030 if risk_level == 'low' else (0.0020 if risk_level == 'medium' else 0.0010)
-        tp_distance = sl_distance * 2.0
-        units = 1000 if risk_level == 'low' else (2000 if risk_level == 'medium' else 5000)
+# ==========================================
+# 4. BROKER API CLIENTS (OANDA, Capital.com, MT5)
+# ==========================================
+def get_oanda_headers(api_token):
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_token}"
+    }
 
+def get_oanda_base_url(environment):
+    if environment == 'live':
+        return "https://api-fxtrade.oanda.com/v3"
+    return "https://api-fxpractice.oanda.com/v3"
+
+def fetch_full_candles(base_url, headers, instrument=“EUR_USD”, count=50, granularity="M5"):
+    url = f"{base_url}/instruments/{instrument}/candles"
+    params = {"count": count, "granularity": granularity, "price": "M"}
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            raw_candles = data.get('candles', [])
+            parsed = []
+            for c in raw_candles:
+                if c.get('complete', True):
+                    mid = c['mid']
+                    parsed.append({
+                        'open': float(mid['o']),
+                        'high': float(mid['h']),
+                        'low': float(mid['l']),
+                        'close': float(mid['c'])
+                    })
+            return parsed
+    except Exception as e:
+        print(f"[ERROR] Candle fetch failed for {instrument}: {e}", flush=True)
+    return []
+
+def place_capital_com_order(profile, instrument, direction, current_price, atr_value):
+    """
+    Capital.com REST API Execution (Works reliably in Nigeria without walls)
+    """
+    base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
+    
+    # Dynamic ATR Stop Loss & Take Profit calculation
+    sl_distance = atr_value * 1.5
+    tp_distance = sl_distance * 2.0
+    
+    if direction == "BUY":
+        sl_price = round(current_price - sl_distance, 5)
+        tp_price = round(current_price + tp_distance, 5)
+    else:
+        sl_price = round(current_price + sl_distance, 5)
+        tp_price = round(current_price - tp_distance, 5)
+        
+    payload = {
+        "epic": instrument.replace("_", ""),
+        "direction": direction,
+        "size": 0.1, # Dynamic lot size
+        "guaranteedStopLoss": False,
+        "stopLossLevel": sl_price,
+        "takeProfitLevel": tp_price
+    }
+    
+    headers = {
+        "X-SECURITY-TOKEN": getattr(profile, 'capital_security_token', ''),
+        "CST": getattr(profile, 'capital_cst_token', ''),
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(f"{base_url}/positions", headers=headers, json=payload, timeout=10)
+        if response.status_code in [200, 201]:
+            print(f"✅ [CAPITAL.COM ORDER SUCCESS] {instrument} {direction}", flush=True)
+            send_telegram_alert(f"🚀 CELOOH BOT TRADE (Capital.com)\nAsset: {instrument}\nDirection: {direction}\nSL: {sl_price} | TP: {tp_price}")
+            return True
+        else:
+            print(f"❌ [Capital.com REJECTED]: {response.text}", flush=True)
+    except Exception as e:
+        print(f"[CAPITAL ERROR] {e}", flush=True)
+    return False
+
+def place_oanda_order(profile, instrument, direction, current_price, atr_value):
+    risk_level = getattr(profile, 'risk_level', 'medium')
+    sl_distance = atr_value * (1.2 if risk_level == 'low' else 1.5)
+    tp_distance = sl_distance * 2.0
+    
+    units = 1000 if risk_level == 'low' else 2000
     if direction == "BUY":
         units_str = str(units)
-        sl_price = round(current_price - sl_distance, 5 if instrument == "EUR_USD" else 2)
-        tp_price = round(current_price + tp_distance, 5 if instrument == "EUR_USD" else 2)
+        sl_price = round(current_price - sl_distance, 5)
+        tp_price = round(current_price + tp_distance, 5)
     else:
         units_str = str(-units)
-        sl_price = round(current_price + sl_distance, 5 if instrument == "EUR_USD" else 2)
-        tp_price = round(current_price - tp_distance, 5 if instrument == "EUR_USD" else 2)
+        sl_price = round(current_price + sl_distance, 5)
+        tp_price = round(current_price - tp_distance, 5)
 
     base_url = get_oanda_base_url(profile.oanda_environment)
     headers = get_oanda_headers(profile.oanda_api_token)
@@ -171,78 +270,36 @@ def place_oanda_order(profile, instrument, direction, current_price):
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         if response.status_code in [200, 201]:
-            msg = f"🚀 CELOOH BOT TRADE EXECUTED (OANDA)\nAsset: {instrument}\nDirection: {direction}\nUnits: {units_str}\nSL: {sl_price} | TP: {tp_price}"
-            print(f"✅ [OANDA ORDER SUCCESS] {instrument} {direction}")
-            send_telegram_alert(msg)
+            print(f"✅ [OANDA ORDER SUCCESS] {instrument} {direction}", flush=True)
+            send_telegram_alert(f"🚀 CELOOH BOT TRADE (OANDA)\nAsset: {instrument}\nDirection: {direction}\nSL: {sl_price} | TP: {tp_price}")
             return True
-        else:
-            print(f"❌ [OANDA REJECTED] {instrument}: {response.text}")
     except Exception as e:
-        print(f"[ERROR] OANDA order exception: {e}")
+        print(f"[ERROR] OANDA order exception: {e}", flush=True)
     return False
 
-def place_mt5_order(profile, instrument, direction, current_price):
-    """
-    Placeholder handler for MT5 broker execution (Exness, HFM, etc.).
-    """
-    print(f"⚡ [MT5 SIGNAL] User {profile.user.username} -> {instrument} {direction} at {current_price} (Server: {profile.mt5_server})")
-    send_telegram_alert(f"🚀 CELOOH BOT TRADE (MT5)\nAsset: {instrument}\nDirection: {direction}\nLogin: {profile.mt5_login}")
-    return True
-
-def sync_closed_trades_pnl(profile):
-    if profile.broker_type == 'oanda':
-        if not profile.oanda_account_id or not profile.oanda_api_token:
-            return
-        base_url = get_oanda_base_url(profile.oanda_environment)
-        headers = get_oanda_headers(profile.oanda_api_token)
-        url = f"{base_url}/accounts/{profile.oanda_account_id}/trades?state=CLOSED"
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            if response.status_code == 200:
-                closed_trades = response.json().get('trades', [])
-                total_wins, total_losses, net_profit = 0, 0, 0.0
-                for trade in closed_trades:
-                    realized_pl = float(trade.get('realizedPL', 0.0))
-                    net_profit += realized_pl
-                    if realized_pl > 0: total_wins += 1
-                    elif realized_pl < 0: total_losses += 1
-                profile.total_wins = total_wins
-                profile.total_losses = total_losses
-                profile.total_trades = total_wins + total_losses
-                profile.net_profit = round(net_profit, 2)
-                if profile.total_trades > 0:
-                    profile.win_rate = round((total_wins / profile.total_trades) * 100, 1)
-                profile.save()
-        except Exception as e:
-            print(f"[SYNC ERROR] {e}")
-
+# ==========================================
+# 5. MAIN BOT EXECUTION LOOP
+# ==========================================
 def run_bot_cycle():
     active_profiles = Profile.objects.filter(is_bot_active=True)
     if not active_profiles.exists():
         return
 
-    for profile in active_profiles:
-        # Validate Credentials based on Broker Type
-        if profile.broker_type == 'oanda':
-            if not profile.oanda_account_id or not profile.oanda_api_token:
-                continue
-            base_url = get_oanda_base_url(profile.oanda_environment)
-            headers = get_oanda_headers(profile.oanda_api_token)
-        elif profile.broker_type == 'mt5':
-            if not profile.mt5_login or not profile.mt5_password or not profile.mt5_server:
-                continue
-            # For MT5 data fetching, fall back to public OANDA practice feed for analysis
-            base_url = get_oanda_base_url('practice')
-            headers = {"Content-Type": "application/json"}
-        else:
-            continue
+    # Check Economic News Guard before processing trades
+    if is_high_impact_news_imminent():
+        return
 
-        sync_closed_trades_pnl(profile)
+    for profile in active_profiles:
+        broker_type = getattr(profile, 'broker_type', 'oanda')
+        
+        if broker_type == 'capital':
+            base_url = "https://api-capital.backend-capital.com/api/v1"
+        else:
+            base_url = get_oanda_base_url(getattr(profile, 'oanda_environment', 'practice'))
+            
+        headers = {"Content-Type": "application/json"}
 
         for instrument in ASSET_LIST:
-            daily_candles = fetch_full_candles(base_url, headers, instrument=instrument, count=10, granularity="D")
-            macro_structure = analyze_market_structure(daily_candles)
-            
             m5_candles = fetch_full_candles(base_url, headers, instrument=instrument, count=250, granularity="M5")
             if len(m5_candles) < 200:
                 continue
@@ -251,34 +308,36 @@ def run_bot_cycle():
             current_price = close_prices[-1]
             ema_200 = calculate_ema(close_prices, 200)
             rsi_14 = calculate_rsi(close_prices, 14)
+            atr_value = calculate_atr(m5_candles, 14)
+            market_structure = analyze_market_structure(m5_candles)
             candle_signal = check_candlestick_patterns(m5_candles)
 
             if ema_200 is None or rsi_14 is None:
                 continue
 
-            # HIGH CONFLUENCE BUY
-            if (macro_structure == "BULLISH_STRUCTURE" or current_price > ema_200) and \
-               candle_signal in ["BULLISH_PINBAR", "BULLISH_ENGULFING"] and rsi_14 <= 40:
-                print(f"🎯 [{profile.user.username}] High Confluence BUY Signal on {instrument}")
-                if profile.broker_type == 'oanda':
-                    place_oanda_order(profile, instrument, "BUY", current_price)
+            # HIGH CONFLUENCE BUY (HH/HL Structure + EMA + RSI + Pattern)
+            if market_structure == "BULLISH_HH_HL" and current_price > ema_200 and \
+               candle_signal in ["BULLISH_PINBAR", "BULLISH_ENGULFING"] and rsi_14 <= 42:
+                print(f"🎯 [{profile.user.username}] Bullish Setup on {instrument}", flush=True)
+                if broker_type == 'capital':
+                    place_capital_com_order(profile, instrument, "BUY", current_price, atr_value)
                 else:
-                    place_mt5_order(profile, instrument, "BUY", current_price)
+                    place_oanda_order(profile, instrument, "BUY", current_price, atr_value)
 
-            # HIGH CONFLUENCE SELL
-            elif (macro_structure == "BEARISH_STRUCTURE" or current_price < ema_200) and \
-                 candle_signal in ["BEARISH_PINBAR", "BEARISH_ENGULFING"] and rsi_14 >= 60:
-                print(f"🎯 [{profile.user.username}] High Confluence SELL Signal on {instrument}")
-                if profile.broker_type == 'oanda':
-                    place_oanda_order(profile, instrument, "SELL", current_price)
+            # HIGH CONFLUENCE SELL (LH/LL Structure + EMA + RSI + Pattern)
+            elif market_structure == "BEARISH_LH_LL" and current_price < ema_200 and \
+                 candle_signal in ["BEARISH_PINBAR", "BEARISH_ENGULFING"] and rsi_14 >= 58:
+                print(f"🎯 [{profile.user.username}] Bearish Setup on {instrument}", flush=True)
+                if broker_type == 'capital':
+                    place_capital_com_order(profile, instrument, "SELL", current_price, atr_value)
                 else:
-                    place_mt5_order(profile, instrument, "SELL", current_price)
+                    place_oanda_order(profile, instrument, "SELL", current_price, atr_value)
 
 if __name__ == "__main__":
-    print("🚀 Dual-Broker Celooh Bot Engine Started...")
+    print("🚀 Elite Celooh Multi-Broker Bot Engine Started...", flush=True)
     while True:
         try:
             run_bot_cycle()
         except Exception as e:
-            print(f"[UNHANDLED EXCEPTION] {e}")
+            print(f"[UNHANDLED EXCEPTION] {e}", flush=True)
         time.sleep(15)

@@ -4,13 +4,17 @@ from django.contrib.auth.models import User
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     
-    # Broker Choice: 'oanda' or 'mt5'
+    # Broker Choice: 'oanda', 'capital', or 'mt5'
     broker_type = models.CharField(max_length=20, default='oanda')
     
     # OANDA Broker Configuration
     oanda_environment = models.CharField(max_length=20, default='practice')
     oanda_account_id = models.CharField(max_length=100, blank=True, null=True)
     oanda_api_token = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Capital.com Broker Configuration
+    capital_security_token = models.CharField(max_length=255, blank=True, null=True)
+    capital_cst_token = models.CharField(max_length=255, blank=True, null=True)
     
     # MT5 Broker Configuration (For Exness, HFM, IC Markets, etc.)
     mt5_login = models.CharField(max_length=50, blank=True, null=True)

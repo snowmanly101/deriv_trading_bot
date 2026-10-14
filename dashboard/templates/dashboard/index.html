@@ -397,7 +397,8 @@
             <div class="guide-box">
                 <h4>💡 Step-by-Step Guide: How to Link Your Broker</h4>
                 <ol>
-                    <li>Select your preferred broker type from the dropdown below (OANDA or MT5).</li>
+                    <li>Select your preferred broker type from the dropdown below (OANDA, Capital.com, or MT5).</li>
+                    <li>For <strong>Capital.com</strong>: Enter your API Security Token and CST Token. Fully accessible in Nigeria without walls!</li>
                     <li>For <strong>OANDA</strong>: Generate a Personal Access Token from your OANDA Client portal and copy your Account ID.</li>
                     <li>For <strong>MT5 Brokers (Exness, HFM, etc.)</strong>: Enter your MT5 Account Login Number, Password, and Server name.</li>
                     <li>Select your risk profile, toggle the bot switch ON, and click Save!</li>
@@ -416,6 +417,7 @@
                         <label>Select Trading Broker</label>
                         <select name="broker_type" id="brokerTypeSelect" class="form-control" style="cursor: pointer;" onchange="toggleBrokerFields()">
                             <option value="oanda" {% if profile.broker_type == 'oanda' or not profile.broker_type %}selected{% endif %}>OANDA (REST API)</option>
+                            <option value="capital" {% if profile.broker_type == 'capital' %}selected{% endif %}>Capital.com (Recommended - Works in Nigeria)</option>
                             <option value="mt5" {% if profile.broker_type == 'mt5' %}selected{% endif %}>MT5 Broker (Exness, HFM, IC Markets, etc.)</option>
                         </select>
                     </div>
@@ -451,6 +453,23 @@
                             <input type="password" name="oanda_api_token" class="form-control" 
                                    value="{{ profile.oanda_api_token|default:'' }}" 
                                    placeholder="Paste your OANDA API token here">
+                        </div>
+                    </div>
+
+                    <!-- Capital.com Fields Group -->
+                    <div id="capitalFields" style="display: none;">
+                        <div class="form-group">
+                            <label>Capital.com Security Token (API Key)</label>
+                            <input type="password" name="capital_security_token" class="form-control" 
+                                   value="{{ profile.capital_security_token|default:'' }}" 
+                                   placeholder="Enter your Capital.com API security token">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Capital.com CST Token</label>
+                            <input type="password" name="capital_cst_token" class="form-control" 
+                                   value="{{ profile.capital_cst_token|default:'' }}" 
+                                   placeholder="Enter your Capital.com session CST token">
                         </div>
                     </div>
 
@@ -506,7 +525,9 @@
 
                 <div style="font-size: 12px; color: var(--text-muted);">ACTIVE BROKER</div>
                 <div style="font-size: 15px; font-weight: 700; color: var(--neon-gold); margin: 4px 0 16px 0;">
-                    {% if profile.broker_type == 'mt5' %}
+                    {% if profile.broker_type == 'capital' %}
+                        Capital.com Connected
+                    {% elif profile.broker_type == 'mt5' %}
                         {% if profile.mt5_login %} MT5 Connected ({{ profile.mt5_login }}) {% else %} Pending MT5 Setup {% endif %}
                     {% else %}
                         {% if profile.oanda_account_id %} OANDA Connected ({{ profile.oanda_account_id }}) {% else %} Pending OANDA Setup {% endif %}
@@ -565,13 +586,19 @@
         function toggleBrokerFields() {
             const brokerVal = document.getElementById('brokerTypeSelect').value;
             const oandaDiv = document.getElementById('oandaFields');
+            const capitalDiv = document.getElementById('capitalFields');
             const mt5Div = document.getElementById('mt5Fields');
-            if (brokerVal === 'mt5') {
-                oandaDiv.style.display = 'none';
+
+            oandaDiv.style.display = 'none';
+            capitalDiv.style.display = 'none';
+            mt5Div.style.display = 'none';
+
+            if (brokerVal === 'capital') {
+                capitalDiv.style.display = 'block';
+            } else if (brokerVal === 'mt5') {
                 mt5Div.style.display = 'block';
             } else {
                 oandaDiv.style.display = 'block';
-                mt5Div.style.display = 'none';
             }
         }
         // Run on load to set correct initial state

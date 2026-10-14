@@ -40,7 +40,7 @@ def dashboard_view(request):
         'market_bias': 'Bullish Confluence',
         'news_event': 'US Federal Reserve Policy Insights & CPI Inflation Data Watch',
         'trading_reason': '24-Hour macro daily trend shows strong buyer support above the 200 EMA. Short-term M5 pullbacks touching lower Bollinger Bands offer high-confluence entry setups.',
-        'bot_status_directive': 'Active - Multi-asset scanner analyzing 15s intervals with risk controls.'
+        'bot_status_directive': 'Active - Multi-asset scanner analyzing market structure & news guards.'
     }
     
     try:
@@ -64,13 +64,17 @@ def update_broker_settings(request):
     if request.method == 'POST':
         profile, created = Profile.objects.get_or_create(user=request.user)
         
-        # Broker Type Selection
+        # Broker Type Selection ('oanda', 'capital', or 'mt5')
         profile.broker_type = request.POST.get('broker_type', 'oanda')
         
         # OANDA Broker Credentials & Settings
         profile.oanda_environment = request.POST.get('oanda_environment', 'practice')
         profile.oanda_account_id = request.POST.get('oanda_account_id', '').strip()
         profile.oanda_api_token = request.POST.get('oanda_api_token', '').strip()
+        
+        # Capital.com Broker Credentials & Settings
+        profile.capital_security_token = request.POST.get('capital_security_token', '').strip()
+        profile.capital_cst_token = request.POST.get('capital_cst_token', '').strip()
         
         # MT5 Broker Credentials & Settings
         profile.mt5_login = request.POST.get('mt5_login', '').strip()
