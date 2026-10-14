@@ -13,10 +13,20 @@ from dashboard.models import Profile
 
 ASSET_LIST = ["EUR_USD", "XAU_USD"]
 
-def calculate_sma(prices, period):
-    if len(prices) < period:
-        return None
-    return sum(prices[-period:]) / period
+# Hardcoded Telegram credentials from your screenshots
+TELEGRAM_BOT_TOKEN = "8733660618:AAEbH97FJ-VvdjGsqG13DCiKRnFRGGrm40"
+TELEGRAM_CHAT_ID = "7573543350"
+
+def send_telegram_alert(message):
+    """Sends instant trade execution alerts to your Telegram."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"}
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        print(f"[TELEGRAM ERROR] {e}")
 
 def calculate_ema(prices, period):
     if len(prices) < period:
@@ -96,17 +106,11 @@ def analyze_market_structure(candles):
     """
     if len(candles) < 4:
         return "NEUTRAL"
-        
     c1, c2, c3, c4 = candles[-4], candles[-3], candles[-2], candles[-1]
-    
-    # Check Higher Highs and Higher Lows
     if c4['high'] > c3['high'] and c3['high'] > c2['high'] and c4['low'] > c3['low'] and c3['low'] > c2['low']:
         return "BULLISH_STRUCTURE"
-        
-    # Check Lower Highs and Lower Lows
     if c4['high'] < c3['high'] and c3['high'] < c2['high'] and c4['low'] < c3['low'] and c3['low'] < c2['low']:
         return "BEARISH_STRUCTURE"
-        
     return "NEUTRAL"
 
 def check_candlestick_patterns(candles):
@@ -115,10 +119,8 @@ def check_candlestick_patterns(candles):
     """
     if len(candles) < 2:
         return "NONE"
-        
     curr = candles[-1]
     prev = candles[-2]
-    
     total_range = curr['high'] - curr['low']
     if total_range == 0:
         return "NONE"
@@ -127,47 +129,102 @@ def check_candlestick_patterns(candles):
     upper_wick = curr['high'] - max(curr['open'], curr['close'])
     lower_wick = min(curr['open'], curr['close']) - curr['low']
     
-    # 1. Bullish Pin Bar Rejection (Long lower wick >= 60% of total candle)
     if (lower_wick / total_range) >= 0.60:
         return "BULLISH_PINBAR"
-        
-    # 2. Bearish Pin Bar Rejection (Long upper wick >= 60% of total candle)
     if (upper_wick / total_range) >= 0.60:
         return "BEARISH_PINBAR"
-        
-    # 3. Bullish Engulfing (Green candle engulfs previous red body)
     if prev['close'] < prev['open'] and curr['close'] > curr['open']:
         if curr['close'] >= prev['open'] and curr['open'] <= prev['close']:
             return "BULLISH_ENGULFING"
-            
-    # 4. Bearish Engulfing (Red candle engulfs previous green body)
     if prev['close'] > prev['open'] and curr['close'] < curr['open']:
         if curr['close'] <= prev['open'] and curr['open'] >= prev['close']:
             return "BEARISH_ENGULFING"
-            
     return "NONE"
 
-def place_order(base_url, headers, account_id, instrument, units):
+def place_order_with_risk(base_url, headers, account_id, instrument, direction, current_price, risk_level):
+    """
+    Places market order with automated TP & SL based on 1:2 Risk-to-Reward ratio.
+    """
+    if instrument == "XAU_USD":
+        sl_distance = 5.0 if risk_level == 'low' else (3.0 if risk_level == 'medium' else 2.0)
+        tp_distance = sl_distance * 2.0 # 1:2 R&R
+        units = 1 if risk_level == 'low' else (2 if risk_level == 'medium' else 3)
+    else:
+        sl_distance = 0.0030 if risk_level == 'low' else (0.0020 if risk_level == 'medium' else 0.0010)
+        tp_distance = sl_distance * 2.0 # 1:2 R&R
+        units = 1000 if risk_level == 'low' else (2000 if risk_level == 'medium' else 5000)
+
+    if direction == "BUY":
+        units_str = str(units)
+        sl_price = round(current_price - sl_distance, 5 if instrument == "EUR_USD" else 2)
+        tp_price = round(current_price + tp_distance, 5 if instrument == "EUR_USD" else 2)
+    else:
+        units_str = str(-units)
+        sl_price = round(current_price + sl_distance, 5 if instrument == "EUR_USD" else 2)
+        tp_price = round(current_price - tp_distance, 5 if instrument == "EUR_USD" else 2)
+
     url = f"{base_url}/accounts/{account_id}/orders"
     payload = {
         "order": {
-            "units": str(units),
+            "units": units_str,
             "instrument": instrument,
             "timeInForce": "FOK",
             "type": "MARKET",
-            "positionFill": "DEFAULT"
+            "positionFill": "DEFAULT",
+            "stopLossOnFill": {"price": str(sl_price), "timeInForce": "GTC"},
+            "takeProfitOnFill": {"price": str(tp_price), "timeInForce": "GTC"}
         }
     }
+
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         if response.status_code in [200, 201]:
-            print(f"✅ [ORDER EXECUTED] {units} units of {instrument}")
+            msg = f"🚀 CELOOH BOT TRADE EXECUTED\nAsset: {instrument}\nDirection: {direction}\nUnits: {units_str}\nSL: {sl_price} | TP: {tp_price} (1:2 R&R)"
+            print(f"✅ [ORDER SUCCESS] {instrument} {direction} | SL: {sl_price} TP: {tp_price}")
+            send_telegram_alert(msg)
             return True
         else:
             print(f"❌ [ORDER REJECTED] {instrument}: {response.text}")
     except Exception as e:
-        print(f"[ERROR] Exception submitting order: {e}")
+        print(f"[ERROR] Order placement exception: {e}")
     return False
+
+def sync_closed_trades_pnl(profile):
+    """
+    Queries OANDA closed trades and updates profile metrics (net profit, wins, losses).
+    """
+    if not profile.oanda_account_id or not profile.oanda_api_token:
+        return
+
+    base_url = get_oanda_base_url(profile.oanda_environment)
+    headers = get_oanda_headers(profile.oanda_api_token)
+    url = f"{base_url}/accounts/{profile.oanda_account_id}/trades?state=CLOSED"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            closed_trades = response.json().get('trades', [])
+            total_wins = 0
+            total_losses = 0
+            net_profit = 0.0
+
+            for trade in closed_trades:
+                realized_pl = float(trade.get('realizedPL', 0.0))
+                net_profit += realized_pl
+                if realized_pl > 0:
+                    total_wins += 1
+                elif realized_pl < 0:
+                    total_losses += 1
+
+            profile.total_wins = total_wins
+            profile.total_losses = total_losses
+            profile.total_trades = total_wins + total_losses
+            profile.net_profit = round(net_profit, 2)
+            if profile.total_trades > 0:
+                profile.win_rate = round((total_wins / profile.total_trades) * 100, 1)
+            profile.save()
+    except Exception as e:
+        print(f"[SYNC ERROR] Failed to sync P&L for user {profile.user.username}: {e}")
 
 def run_bot_cycle():
     active_profiles = Profile.objects.filter(is_bot_active=True)
@@ -178,15 +235,17 @@ def run_bot_cycle():
         if not profile.oanda_account_id or not profile.oanda_api_token:
             continue
 
+        # Sync closed trade performance from OANDA directly into user Django profile
+        sync_closed_trades_pnl(profile)
+
         base_url = get_oanda_base_url(profile.oanda_environment)
         headers = get_oanda_headers(profile.oanda_api_token)
+        risk_level = getattr(profile, 'risk_level', 'medium')
 
         for instrument in ASSET_LIST:
-            # 1. Fetch Daily Candles for Macro Structure (HH/HL vs LH/LL)
             daily_candles = fetch_full_candles(base_url, headers, instrument=instrument, count=10, granularity="D")
             macro_structure = analyze_market_structure(daily_candles)
             
-            # 2. Fetch Short-Term M5 Candles for Reversal Pattern Detection
             m5_candles = fetch_full_candles(base_url, headers, instrument=instrument, count=250, granularity="M5")
             if len(m5_candles) < 200:
                 continue
@@ -200,32 +259,22 @@ def run_bot_cycle():
             if ema_200 is None or rsi_14 is None:
                 continue
 
-            print(f"[{profile.user.username}] {instrument} | Structure: {macro_structure} | Pattern: {candle_signal} | RSI: {rsi_14:.1f}")
-
-            # 3. HIGH CONFLUENCE BUY EXECUTION
-            # Condition: Macro structure or price above EMA AND Bullish Candlestick Signal AND RSI <= 40
+            # HIGH CONFLUENCE BUY CONDITION
             if (macro_structure == "BULLISH_STRUCTURE" or current_price > ema_200) and \
                candle_signal in ["BULLISH_PINBAR", "BULLISH_ENGULFING"] and rsi_14 <= 40:
                 
-                units = 1000 if instrument == "EUR_USD" else 1
-                print(f"🎯 [HIGH CONFLUENCE BUY] {instrument} - Pattern: {candle_signal}")
-                if place_order(base_url, headers, profile.oanda_account_id, instrument, units=units):
-                    profile.total_trades = (profile.total_trades or 0) + 1
-                    profile.save()
+                print(f"🎯 [{profile.user.username}] High Confluence BUY Signal on {instrument}")
+                place_order_with_risk(base_url, headers, profile.oanda_account_id, instrument, "BUY", current_price, risk_level)
 
-            # 4. HIGH CONFLUENCE SELL EXECUTION
-            # Condition: Bearish structure or price below EMA AND Bearish Candlestick Signal AND RSI >= 60
+            # HIGH CONFLUENCE SELL CONDITION
             elif (macro_structure == "BEARISH_STRUCTURE" or current_price < ema_200) and \
                  candle_signal in ["BEARISH_PINBAR", "BEARISH_ENGULFING"] and rsi_14 >= 60:
                 
-                units = -1000 if instrument == "EUR_USD" else -1
-                print(f"🎯 [HIGH CONFLUENCE SELL] {instrument} - Pattern: {candle_signal}")
-                if place_order(base_url, headers, profile.oanda_account_id, instrument, units=units):
-                    profile.total_trades = (profile.total_trades or 0) + 1
-                    profile.save()
+                print(f"🎯 [{profile.user.username}] High Confluence SELL Signal on {instrument}")
+                place_order_with_risk(base_url, headers, profile.oanda_account_id, instrument, "SELL", current_price, risk_level)
 
 if __name__ == "__main__":
-    print("🚀 Multi-Confluence Price Action & Structure Bot Started...")
+    print("🚀 Enterprise Celooh Bot with Telegram Alerts & Market Structure Started...")
     while True:
         try:
             run_bot_cycle()
