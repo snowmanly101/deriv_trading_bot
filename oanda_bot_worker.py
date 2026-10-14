@@ -11,7 +11,11 @@ django.setup()
 
 from dashboard.models import Profile
 
-ASSET_LIST = ["EUR_USD", "XAU_USD"]
+# 10 Major Forex Currency Pairs
+ASSET_LIST = [
+    "EUR_USD", "GBP_USD", "USD_JPY", "AUD_USD", "USD_CAD",
+    "USD_CHF", "NZD_USD", "EUR_GBP", "EUR_JPY", "GBP_JPY"
+]
 
 # Hardcoded Telegram credentials
 TELEGRAM_BOT_TOKEN = "8733660618:AAHnB2D6rTzg8ghaxw97gshxTTJu1Eu-mOg"
@@ -28,7 +32,7 @@ def send_telegram_alert(message):
         print(f"[TELEGRAM ERROR] {e}", flush=True)
 
 # ==========================================
-# 1. ECONOMIC NEWS GUARD (Myfxbook/FF News Filter)
+# 1. ECONOMIC NEWS GUARD (Daily News Filter)
 # ==========================================
 def is_high_impact_news_imminent():
     """
@@ -41,7 +45,7 @@ def is_high_impact_news_imminent():
             from datetime import datetime, timezone
             now = datetime.now(timezone.utc)
             for event in events:
-                if event.get('impact') == 'High' and event.get('country') in ['USD', 'EUR']:
+                if event.get('impact') == 'High' and event.get('country') in ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD']:
                     event_date_str = event.get('date', '').replace('Z', '+00:00')
                     if event_date_str:
                         event_time = datetime.fromisoformat(event_date_str)
@@ -94,11 +98,8 @@ def calculate_rsi(prices, period=14):
     return 100 - (100 / (1 + rs))
 
 def calculate_atr(candles, period=14):
-    """
-    Calculates Average True Range (ATR) for dynamic stop loss and position sizing.
-    """
     if len(candles) < period + 1:
-        return 0.0010 # default fallback
+        return 0.0010
     tr_list = []
     for i in range(1, len(candles)):
         high = candles[i]['high']
@@ -112,9 +113,6 @@ def calculate_atr(candles, period=14):
 # 3. ADVANCED MARKET STRUCTURE (HH, LH, HL, LL)
 # ==========================================
 def analyze_market_structure(candles):
-    """
-    Detects Higher Highs (HH), Higher Lows (HL), Lower Highs (LH), and Lower Lows (LL)
-    """
     if len(candles) < 6:
         return "NEUTRAL"
     
@@ -193,10 +191,6 @@ def fetch_full_candles(base_url, headers, instrument="EUR_USD", count=50, granul
     return []
 
 def get_capital_session(profile):
-    """
-    Automatically creates a session with Capital.com using the API Key and Custom Password
-    and retrieves the dynamic CST and X-SECURITY-TOKEN.
-    """
     base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
     
     url = f"{base_url}/session"
@@ -206,7 +200,7 @@ def get_capital_session(profile):
     }
     payload = {
         "identifier": profile.user.email,
-        "password": getattr(profile, 'capital_cst_token', '')  # Custom API password stored in this field
+        "password": getattr(profile, 'capital_cst_token', '')
     }
     
     try:
@@ -223,9 +217,6 @@ def get_capital_session(profile):
     return None, None
 
 def place_capital_com_order(profile, instrument, direction, current_price, atr_value):
-    """
-    Capital.com REST API Execution with Automatic Session Auth
-    """
     cst, x_sec = get_capital_session(profile)
     if not cst or not x_sec:
         print("❌ [CAPITAL ERROR] Session creation failed. Verify API Key and Custom Password on dashboard.", flush=True)
@@ -316,6 +307,7 @@ def place_oanda_order(profile, instrument, direction, current_price, atr_value):
 def run_bot_cycle():
     active_profiles = Profile.objects.filter(is_bot_active=True)
     if not active_profiles.exists():
+        print("🔍 [BOT SCAN] Waiting for active user profile on dashboard...", flush=True)
         return
 
     # Check Economic News Guard before processing trades
@@ -324,6 +316,7 @@ def run_bot_cycle():
 
     for profile in active_profiles:
         broker_type = getattr(profile, 'broker_type', 'oanda')
+        print(f"🔍 [BOT SCAN] User: {profile.user.username} | Broker: {broker_type.upper()} | Scanning 10 pairs...", flush=True)
         
         if broker_type == 'capital':
             base_url = "https://api-capital.backend-capital.com/api/v1"
@@ -351,7 +344,7 @@ def run_bot_cycle():
             # HIGH CONFLUENCE BUY
             if market_structure == "BULLISH_HH_HL" and current_price > ema_200 and \
                candle_signal in ["BULLISH_PINBAR", "BULLISH_ENGULFING"] and rsi_14 <= 42:
-                print(f"🎯 [{profile.user.username}] Bullish Setup on {instrument}", flush=True)
+                print(f"🎯 [{profile.user.username}] Bullish Confluence Triggered on {instrument}!", flush=True)
                 if broker_type == 'capital':
                     place_capital_com_order(profile, instrument, "BUY", current_price, atr_value)
                 else:
@@ -360,14 +353,14 @@ def run_bot_cycle():
             # HIGH CONFLUENCE SELL
             elif market_structure == "BEARISH_LH_LL" and current_price < ema_200 and \
                  candle_signal in ["BEARISH_PINBAR", "BEARISH_ENGULFING"] and rsi_14 >= 58:
-                print(f"🎯 [{profile.user.username}] Bearish Setup on {instrument}", flush=True)
+                print(f"🎯 [{profile.user.username}] Bearish Confluence Triggered on {instrument}!", flush=True)
                 if broker_type == 'capital':
                     place_capital_com_order(profile, instrument, "SELL", current_price, atr_value)
                 else:
                     place_oanda_order(profile, instrument, "SELL", current_price, atr_value)
 
 if __name__ == "__main__":
-    print("🚀 Elite Celooh Multi-Broker Bot Engine Started...", flush=True)
+    print("🚀 Elite Celooh 10-Asset Multi-Broker Bot Engine Started...", flush=True)
     while True:
         try:
             run_bot_cycle()
