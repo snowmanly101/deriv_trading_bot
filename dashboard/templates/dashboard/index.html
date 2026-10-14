@@ -398,7 +398,7 @@
                 <h4>💡 Step-by-Step Guide: How to Link Your Broker</h4>
                 <ol>
                     <li>Select your preferred broker type from the dropdown below (OANDA, Capital.com, or MT5).</li>
-                    <li>For <strong>Capital.com</strong>: Enter your API Security Token and CST Token. Fully accessible in Nigeria without walls!</li>
+                    <li>For <strong>Capital.com</strong>: Enter your API Security Token and CST Token.</li>
                     <li>For <strong>OANDA</strong>: Generate a Personal Access Token from your OANDA Client portal and copy your Account ID.</li>
                     <li>For <strong>MT5 Brokers (Exness, HFM, etc.)</strong>: Enter your MT5 Account Login Number, Password, and Server name.</li>
                     <li>Select your risk profile, toggle the bot switch ON, and click Save!</li>
@@ -417,7 +417,7 @@
                         <label>Select Trading Broker</label>
                         <select name="broker_type" id="brokerTypeSelect" class="form-control" style="cursor: pointer;" onchange="toggleBrokerFields()">
                             <option value="oanda" {% if profile.broker_type == 'oanda' or not profile.broker_type %}selected{% endif %}>OANDA (REST API)</option>
-                            <option value="capital" {% if profile.broker_type == 'capital' %}selected{% endif %}>Capital.com (Recommended - Works in Nigeria)</option>
+                            <option value="capital" {% if profile.broker_type == 'capital' %}selected{% endif %}>Capital.com (REST API)</option>
                             <option value="mt5" {% if profile.broker_type == 'mt5' %}selected{% endif %}>MT5 Broker (Exness, HFM, IC Markets, etc.)</option>
                         </select>
                     </div>

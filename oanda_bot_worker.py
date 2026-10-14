@@ -170,7 +170,7 @@ def get_oanda_base_url(environment):
         return "https://api-fxtrade.oanda.com/v3"
     return "https://api-fxpractice.oanda.com/v3"
 
-def fetch_full_candles(base_url, headers, instrument=“EUR_USD”, count=50, granularity="M5"):
+def fetch_full_candles(base_url, headers, instrument="EUR_USD", count=50, granularity="M5"):
     url = f"{base_url}/instruments/{instrument}/candles"
     params = {"count": count, "granularity": granularity, "price": "M"}
     try:
@@ -195,7 +195,7 @@ def fetch_full_candles(base_url, headers, instrument=“EUR_USD”, count=50, gr
 
 def place_capital_com_order(profile, instrument, direction, current_price, atr_value):
     """
-    Capital.com REST API Execution (Works reliably in Nigeria without walls)
+    Capital.com REST API Execution
     """
     base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
     
