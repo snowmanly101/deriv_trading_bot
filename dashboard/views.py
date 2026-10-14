@@ -35,7 +35,6 @@ def custom_logout_view(request):
 def dashboard_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
     
-    # Default bulletproof fallback market intelligence
     market_intelligence = {
         'top_asset': 'XAU/USD (Gold) & EUR/USD',
         'market_bias': 'Bullish Confluence',
@@ -45,7 +44,6 @@ def dashboard_view(request):
     }
     
     try:
-        # Fetching live financial news sentiment headlines using your live Finnhub API key
         response = requests.get("https://finnhub.io/api/v1/news?category=forex&token=db7cg41r01qptb5pccs0db7cg41r01qptb5pccsg", timeout=3)
         if response.status_code == 200:
             news_data = response.json()
@@ -54,7 +52,6 @@ def dashboard_view(request):
                 if latest_headline:
                     market_intelligence['news_event'] = f"Live Feed: {latest_headline}"
     except Exception:
-        # Failsafe: Keeps default professional briefing active if network/API is restricted
         pass
 
     return render(request, 'dashboard/index.html', {
@@ -67,15 +64,22 @@ def update_broker_settings(request):
     if request.method == 'POST':
         profile, created = Profile.objects.get_or_create(user=request.user)
         
+        # Broker Type Selection
+        profile.broker_type = request.POST.get('broker_type', 'oanda')
+        
         # OANDA Broker Credentials & Settings
         profile.oanda_environment = request.POST.get('oanda_environment', 'practice')
         profile.oanda_account_id = request.POST.get('oanda_account_id', '').strip()
         profile.oanda_api_token = request.POST.get('oanda_api_token', '').strip()
         
-        # Risk Management Settings (Low / Medium / High)
+        # MT5 Broker Credentials & Settings
+        profile.mt5_login = request.POST.get('mt5_login', '').strip()
+        profile.mt5_password = request.POST.get('mt5_password', '').strip()
+        profile.mt5_server = request.POST.get('mt5_server', '').strip()
+        
+        # Risk Management Settings
         risk_level = request.POST.get('risk_level', 'medium').lower()
-        if hasattr(profile, 'risk_level'):
-            profile.risk_level = risk_level
+        profile.risk_level = risk_level
             
         # Bot Toggle Control
         profile.is_bot_active = request.POST.get('is_bot_active') == 'on'

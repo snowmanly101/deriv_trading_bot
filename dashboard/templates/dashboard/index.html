@@ -327,8 +327,8 @@
         <div>
             <div class="hero-banner">
                 <div>
-                    <h2>Automated OANDA Forex Engine</h2>
-                    <p style="color: var(--text-muted); font-size: 13px;">Primary Broker Platform: OANDA REST API Connection</p>
+                    <h2>Automated Multi-Broker Trading Engine</h2>
+                    <p style="color: var(--text-muted); font-size: 13px;">Universal Algorithmic Strategy Connection</p>
                 </div>
             </div>
 
@@ -393,31 +393,30 @@
                 </div>
             </div>
 
-            <!-- OANDA Guidance Box -->
+            <!-- Broker Guidance Box -->
             <div class="guide-box">
-                <h4>💡 Step-by-Step Guide: How to Link Your OANDA Account</h4>
+                <h4>💡 Step-by-Step Guide: How to Link Your Broker</h4>
                 <ol>
-                    <li>Log into your <strong>OANDA Practice (Demo)</strong> or <strong>Live</strong> account portal.</li>
-                    <li>Navigate to your profile / account settings and select <strong>Manage API Access</strong>.</li>
-                    <li>Click <strong>Generate Token</strong> to create your Personal Access Token.</li>
-                    <li>Copy your full <strong>Account ID</strong> (formatted like <code>101-004-xxxxxxx-001</code>).</li>
-                    <li>Select your environment and risk profile, paste your credentials below, toggle the bot switch ON, and click Save!</li>
+                    <li>Select your preferred broker type from the dropdown below (OANDA or MT5).</li>
+                    <li>For <strong>OANDA</strong>: Generate a Personal Access Token from your OANDA Client portal and copy your Account ID.</li>
+                    <li>For <strong>MT5 Brokers (Exness, HFM, etc.)</strong>: Enter your MT5 Account Login Number, Password, and Server name.</li>
+                    <li>Select your risk profile, toggle the bot switch ON, and click Save!</li>
                 </ol>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">OANDA Broker & Strategy Settings</span>
+                    <span class="card-title">Broker & Strategy Settings</span>
                 </div>
 
                 <form method="POST" action="{% url 'update_broker_settings' %}">
-                    {% csrf_token %}
+                    {% csrf_token %>
                     
                     <div class="form-group">
-                        <label>OANDA Environment</label>
-                        <select name="oanda_environment" class="form-control" style="cursor: pointer;">
-                            <option value="practice" {% if profile.oanda_environment == 'practice' %}selected{% endif %}>Practice (Demo Account)</option>
-                            <option value="live" {% if profile.oanda_environment == 'live' %}selected{% endif %}>Live (Real Money Account)</option>
+                        <label>Select Trading Broker</label>
+                        <select name="broker_type" id="brokerTypeSelect" class="form-control" style="cursor: pointer;" onchange="toggleBrokerFields()">
+                            <option value="oanda" {% if profile.broker_type == 'oanda' or not profile.broker_type %}selected{% endif %}>OANDA (REST API)</option>
+                            <option value="mt5" {% if profile.broker_type == 'mt5' %}selected{% endif %}>MT5 Broker (Exness, HFM, IC Markets, etc.)</option>
                         </select>
                     </div>
 
@@ -430,25 +429,60 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label>OANDA Account ID</label>
-                        <input type="text" name="oanda_account_id" class="form-control" 
-                               value="{{ profile.oanda_account_id|default:'' }}" 
-                               placeholder="e.g. 101-004-12345678-001" required>
+                    <!-- OANDA Fields Group -->
+                    <div id="oandaFields">
+                        <div class="form-group">
+                            <label>OANDA Environment</label>
+                            <select name="oanda_environment" class="form-control" style="cursor: pointer;">
+                                <option value="practice" {% if profile.oanda_environment == 'practice' %}selected{% endif %}>Practice (Demo Account)</option>
+                                <option value="live" {% if profile.oanda_environment == 'live' %}selected{% endif %}>Live (Real Money Account)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>OANDA Account ID</label>
+                            <input type="text" name="oanda_account_id" class="form-control" 
+                                   value="{{ profile.oanda_account_id|default:'' }}" 
+                                   placeholder="e.g. 101-004-12345678-001">
+                        </div>
+
+                        <div class="form-group">
+                            <label>OANDA API Personal Access Token</label>
+                            <input type="password" name="oanda_api_token" class="form-control" 
+                                   value="{{ profile.oanda_api_token|default:'' }}" 
+                                   placeholder="Paste your OANDA API token here">
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>OANDA API Personal Access Token</label>
-                        <input type="password" name="oanda_api_token" class="form-control" 
-                               value="{{ profile.oanda_api_token|default:'' }}" 
-                               placeholder="Paste your OANDA API token here" required>
+                    <!-- MT5 Fields Group -->
+                    <div id="mt5Fields" style="display: none;">
+                        <div class="form-group">
+                            <label>MT5 Login / Account Number</label>
+                            <input type="text" name="mt5_login" class="form-control" 
+                                   value="{{ profile.mt5_login|default:'' }}" 
+                                   placeholder="e.g. 50123456">
+                        </div>
+
+                        <div class="form-group">
+                            <label>MT5 Password</label>
+                            <input type="password" name="mt5_password" class="form-control" 
+                                   value="{{ profile.mt5_password|default:'' }}" 
+                                   placeholder="Your MT5 trading password">
+                        </div>
+
+                        <div class="form-group">
+                            <label>MT5 Server Name</label>
+                            <input type="text" name="mt5_server" class="form-control" 
+                                   value="{{ profile.mt5_server|default:'' }}" 
+                                   placeholder="e.g. Exness-RealTrial or Exness-MT5">
+                        </div>
                     </div>
 
                     <!-- Modern Toggle Switch -->
                     <div class="switch-container">
                         <div>
                             <div style="font-weight: 700; font-size: 14px;">Automated Bot Engine</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for OANDA Forex pairs & Gold</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for Forex pairs & Gold</div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="botToggle" name="is_bot_active" 
@@ -467,12 +501,16 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">System Status</span>
-                    <span class="trial-badge">● OANDA REST API</span>
+                    <span class="trial-badge">● DUAL-ENGINE ACTIVE</span>
                 </div>
 
-                <div style="font-size: 12px; color: var(--text-muted);">ACCOUNT STATUS</div>
+                <div style="font-size: 12px; color: var(--text-muted);">ACTIVE BROKER</div>
                 <div style="font-size: 15px; font-weight: 700; color: var(--neon-gold); margin: 4px 0 16px 0;">
-                    {% if profile.oanda_account_id %} Connected ({{ profile.oanda_account_id }}) {% else %} Pending OANDA Setup {% endif %}
+                    {% if profile.broker_type == 'mt5' %}
+                        {% if profile.mt5_login %} MT5 Connected ({{ profile.mt5_login }}) {% else %} Pending MT5 Setup {% endif %}
+                    {% else %}
+                        {% if profile.oanda_account_id %} OANDA Connected ({{ profile.oanda_account_id }}) {% else %} Pending OANDA Setup {% endif %}
+                    {% endif %}
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-muted);">BOT ALGORITHM</div>
@@ -524,6 +562,21 @@
 
     <!-- Interactive Toggle UI & Live Execution Stream Script -->
     <script>
+        function toggleBrokerFields() {
+            const brokerVal = document.getElementById('brokerTypeSelect').value;
+            const oandaDiv = document.getElementById('oandaFields');
+            const mt5Div = document.getElementById('mt5Fields');
+            if (brokerVal === 'mt5') {
+                oandaDiv.style.display = 'none';
+                mt5Div.style.display = 'block';
+            } else {
+                oandaDiv.style.display = 'block';
+                mt5Div.style.display = 'none';
+            }
+        }
+        // Run on load to set correct initial state
+        toggleBrokerFields();
+
         const botToggle = document.getElementById('botToggle');
         const botStatusDisplay = document.getElementById('botStatusDisplay');
 
