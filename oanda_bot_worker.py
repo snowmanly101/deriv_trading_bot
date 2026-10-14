@@ -28,7 +28,7 @@ def send_telegram_alert(message):
         print(f"[TELEGRAM ERROR] {e}", flush=True)
 
 # ==========================================
-# 1. ECONOMIC NEWS GUARD (Daily News Filter)
+# 1. ECONOMIC NEWS GUARD (Myfxbook/FF News Filter)
 # ==========================================
 def is_high_impact_news_imminent():
     """
@@ -121,7 +121,6 @@ def analyze_market_structure(candles):
     highs = [c['high'] for c in candles[-6:]]
     lows = [c['low'] for c in candles[-6:]]
     
-    # Check recent pivot progression
     h1, h2 = highs[-3], highs[-1]
     l1, l2 = lows[-3], lows[-1]
     
@@ -157,7 +156,7 @@ def check_candlestick_patterns(candles):
     return "NONE"
 
 # ==========================================
-# 4. BROKER API CLIENTS (OANDA, Capital.com, MT5)
+# 4. BROKER API CLIENTS (OANDA, Capital.com)
 # ==========================================
 def get_oanda_headers(api_token):
     return {
@@ -193,13 +192,47 @@ def fetch_full_candles(base_url, headers, instrument="EUR_USD", count=50, granul
         print(f"[ERROR] Candle fetch failed for {instrument}: {e}", flush=True)
     return []
 
-def place_capital_com_order(profile, instrument, direction, current_price, atr_value):
+def get_capital_session(profile):
     """
-    Capital.com REST API Execution
+    Automatically creates a session with Capital.com using the API Key and Custom Password
+    and retrieves the dynamic CST and X-SECURITY-TOKEN.
     """
     base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
     
-    # Dynamic ATR Stop Loss & Take Profit calculation
+    url = f"{base_url}/session"
+    headers = {
+        "X-CAP-API-KEY": getattr(profile, 'capital_security_token', ''),
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "identifier": profile.user.email,
+        "password": getattr(profile, 'capital_cst_token', '')  # Custom API password stored in this field
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        if response.status_code == 200:
+            cst = response.headers.get("CST")
+            x_sec = response.headers.get("X-SECURITY-TOKEN")
+            return cst, x_sec
+        else:
+            print(f"[CAPITAL SESSION REJECTED] {response.text}", flush=True)
+    except Exception as e:
+        print(f"[CAPITAL SESSION ERROR] {e}", flush=True)
+        
+    return None, None
+
+def place_capital_com_order(profile, instrument, direction, current_price, atr_value):
+    """
+    Capital.com REST API Execution with Automatic Session Auth
+    """
+    cst, x_sec = get_capital_session(profile)
+    if not cst or not x_sec:
+        print("❌ [CAPITAL ERROR] Session creation failed. Verify API Key and Custom Password on dashboard.", flush=True)
+        return False
+
+    base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
+    
     sl_distance = atr_value * 1.5
     tp_distance = sl_distance * 2.0
     
@@ -213,15 +246,15 @@ def place_capital_com_order(profile, instrument, direction, current_price, atr_v
     payload = {
         "epic": instrument.replace("_", ""),
         "direction": direction,
-        "size": 0.1, # Dynamic lot size
+        "size": 0.1,
         "guaranteedStopLoss": False,
         "stopLossLevel": sl_price,
         "takeProfitLevel": tp_price
     }
     
     headers = {
-        "X-SECURITY-TOKEN": getattr(profile, 'capital_security_token', ''),
-        "CST": getattr(profile, 'capital_cst_token', ''),
+        "CST": cst,
+        "X-SECURITY-TOKEN": x_sec,
         "Content-Type": "application/json"
     }
     
@@ -315,7 +348,7 @@ def run_bot_cycle():
             if ema_200 is None or rsi_14 is None:
                 continue
 
-            # HIGH CONFLUENCE BUY (HH/HL Structure + EMA + RSI + Pattern)
+            # HIGH CONFLUENCE BUY
             if market_structure == "BULLISH_HH_HL" and current_price > ema_200 and \
                candle_signal in ["BULLISH_PINBAR", "BULLISH_ENGULFING"] and rsi_14 <= 42:
                 print(f"🎯 [{profile.user.username}] Bullish Setup on {instrument}", flush=True)
@@ -324,7 +357,7 @@ def run_bot_cycle():
                 else:
                     place_oanda_order(profile, instrument, "BUY", current_price, atr_value)
 
-            # HIGH CONFLUENCE SELL (LH/LL Structure + EMA + RSI + Pattern)
+            # HIGH CONFLUENCE SELL
             elif market_structure == "BEARISH_LH_LL" and current_price < ema_200 and \
                  candle_signal in ["BEARISH_PINBAR", "BEARISH_ENGULFING"] and rsi_14 >= 58:
                 print(f"🎯 [{profile.user.username}] Bearish Setup on {instrument}", flush=True)
