@@ -45,9 +45,8 @@ def dashboard_view(request):
     }
     
     try:
-        # Optional: Fetch live financial news sentiment headlines (e.g., general market news or forex updates)
-        # Using a public or free endpoint structure safely wrapped in try/except to prevent any disruption
-        response = requests.get("https://finnhub.io/api/v1/news?category=forex&token=sandbox_dummy_token", timeout=3)
+        # Fetching live financial news sentiment headlines using your live Finnhub API key
+        response = requests.get("https://finnhub.io/api/v1/news?category=forex&token=db7cg41r01qptb5pccs0db7cg41r01qptb5pccsg", timeout=3)
         if response.status_code == 200:
             news_data = response.json()
             if news_data and isinstance(news_data, list) and len(news_data) > 0:
