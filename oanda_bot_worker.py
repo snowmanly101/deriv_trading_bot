@@ -13,8 +13,8 @@ from dashboard.models import Profile
 
 ASSET_LIST = ["EUR_USD", "XAU_USD"]
 
-# Hardcoded Telegram credentials from your screenshots
-TELEGRAM_BOT_TOKEN = "8733660618:AAEbH97FJ-VvdjGsqG13DCiKRnFRGGrm40"
+# Hardcoded Telegram credentials
+TELEGRAM_BOT_TOKEN = "8733660618:AAHnB2D6rTzg8ghaxw97gshxTTJu1Eu-mOg"
 TELEGRAM_CHAT_ID = "7573543350"
 
 def send_telegram_alert(message):
@@ -235,7 +235,6 @@ def run_bot_cycle():
         if not profile.oanda_account_id or not profile.oanda_api_token:
             continue
 
-        # Sync closed trade performance from OANDA directly into user Django profile
         sync_closed_trades_pnl(profile)
 
         base_url = get_oanda_base_url(profile.oanda_environment)
