@@ -110,9 +110,6 @@ def calculate_atr(candles, period=14):
 # 3. HIGH-FREQUENCY TREND ANALYSIS
 # ==========================================
 def analyze_trend_momentum(candles):
-    """
-    Simplified trend analysis to generate higher frequency execution signals
-    """
     if len(candles) < 10:
         return "NEUTRAL"
     
@@ -170,8 +167,12 @@ def get_capital_session(profile):
         "X-CAP-API-KEY": getattr(profile, 'capital_security_token', ''),
         "Content-Type": "application/json"
     }
+    
+    # Use the dashboard-configured capital email
+    capital_email = getattr(profile, 'capital_email', '') or profile.user.email
+    
     payload = {
-        "identifier": profile.user.email,
+        "identifier": capital_email,
         "password": getattr(profile, 'capital_cst_token', '')
     }
     
@@ -191,7 +192,7 @@ def get_capital_session(profile):
 def place_capital_com_order(profile, instrument, direction, current_price, atr_value):
     cst, x_sec = get_capital_session(profile)
     if not cst or not x_sec:
-        print("❌ [CAPITAL ERROR] Session creation failed. Verify API Key and Custom Password on dashboard.", flush=True)
+        print("❌ [CAPITAL ERROR] Session creation failed. Verify API Key, Email, and Password on dashboard.", flush=True)
         return False
 
     base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
@@ -209,7 +210,7 @@ def place_capital_com_order(profile, instrument, direction, current_price, atr_v
     payload = {
         "epic": instrument.replace("_", ""),
         "direction": direction,
-        "size": 0.1,
+        "size": 500,  # 0.5 lot sizing equivalent for Capital.com
         "guaranteedStopLoss": False,
         "stopLossLevel": sl_price,
         "takeProfitLevel": tp_price
@@ -225,7 +226,7 @@ def place_capital_com_order(profile, instrument, direction, current_price, atr_v
         response = requests.post(f"{base_url}/positions", headers=headers, json=payload, timeout=10)
         if response.status_code in [200, 201]:
             print(f"✅ [CAPITAL.COM ORDER SUCCESS] {instrument} {direction}", flush=True)
-            send_telegram_alert(f"🚀 CELOOH BOT TRADE (Capital.com)\nAsset: {instrument}\nDirection: {direction}\nSL: {sl_price} | TP: {tp_price}")
+            send_telegram_alert(f"🚀 CELOOH BOT TRADE (Capital.com)\nAsset: {instrument}\nDirection: {direction}\nSize: 500 units\nSL: {sl_price} | TP: {tp_price}")
             return True
         else:
             print(f"❌ [Capital.com REJECTED]: {response.text}", flush=True)

@@ -73,6 +73,7 @@ def update_broker_settings(request):
         profile.oanda_api_token = request.POST.get('oanda_api_token', '').strip()
         
         # Capital.com Broker Credentials & Settings
+        profile.capital_email = request.POST.get('capital_email', '').strip()
         profile.capital_security_token = request.POST.get('capital_security_token', '').strip()
         profile.capital_cst_token = request.POST.get('capital_cst_token', '').strip()
         

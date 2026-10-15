@@ -398,7 +398,7 @@
                 <h4>💡 Step-by-Step Guide: How to Link Your Broker</h4>
                 <ol>
                     <li>Select your preferred broker type from the dropdown below (OANDA, Capital.com, or MT5).</li>
-                    <li>For <strong>Capital.com</strong>: Enter your API Security Token and CST Token.</li>
+                    <li>For <strong>Capital.com</strong>: Enter your Capital.com login Email, API Security Token, and CST Token.</li>
                     <li>For <strong>OANDA</strong>: Generate a Personal Access Token from your OANDA Client portal and copy your Account ID.</li>
                     <li>For <strong>MT5 Brokers (Exness, HFM, etc.)</strong>: Enter your MT5 Account Login Number, Password, and Server name.</li>
                     <li>Select your risk profile, toggle the bot switch ON, and click Save!</li>
@@ -458,6 +458,13 @@
 
                     <!-- Capital.com Fields Group -->
                     <div id="capitalFields" style="display: none;">
+                        <div class="form-group">
+                            <label>Capital.com Account Email</label>
+                            <input type="email" name="capital_email" class="form-control" 
+                                   value="{{ profile.capital_email|default:'' }}" 
+                                   placeholder="e.g. samueloluwasesan@outlook.com">
+                        </div>
+
                         <div class="form-group">
                             <label>Capital.com Security Token (API Key)</label>
                             <input type="password" name="capital_security_token" class="form-control" 

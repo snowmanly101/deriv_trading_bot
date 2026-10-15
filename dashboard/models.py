@@ -13,6 +13,7 @@ class Profile(models.Model):
     oanda_api_token = models.CharField(max_length=255, blank=True, null=True)
     
     # Capital.com Broker Configuration
+    capital_email = models.EmailField(blank=True, null=True)
     capital_security_token = models.CharField(max_length=255, blank=True, null=True)
     capital_cst_token = models.CharField(max_length=255, blank=True, null=True)
     
