@@ -32,12 +32,9 @@ def send_telegram_alert(message):
         print(f"[TELEGRAM ERROR] {e}", flush=True)
 
 # ==========================================
-# 1. ECONOMIC NEWS GUARD (Daily News Filter)
+# 1. ECONOMIC NEWS GUARD
 # ==========================================
 def is_high_impact_news_imminent():
-    """
-    Checks if high-impact USD or EUR news is scheduled within the next 30 minutes.
-    """
     try:
         response = requests.get("https://nfs.faireconomy.media/ff_calendar_thisweek.json", timeout=5)
         if response.status_code == 200:
@@ -50,7 +47,7 @@ def is_high_impact_news_imminent():
                     if event_date_str:
                         event_time = datetime.fromisoformat(event_date_str)
                         time_diff_minutes = (event_time - now).total_seconds() / 60
-                        if -30 <= time_diff_minutes <= 30:
+                        if -15 <= time_diff_minutes <= 15:
                             print(f"🚨 [NEWS GUARD] Pausing trading due to high-impact news: {event.get('title')}", flush=True)
                             return True
     except Exception as e:
@@ -58,7 +55,7 @@ def is_high_impact_news_imminent():
     return False
 
 # ==========================================
-# 2. TECHNICAL INDICATORS & ATR CALCULATION
+# 2. INDICATORS & ATR
 # ==========================================
 def calculate_ema(prices, period):
     if len(prices) < period:
@@ -110,51 +107,26 @@ def calculate_atr(candles, period=14):
     return sum(tr_list[-period:]) / period
 
 # ==========================================
-# 3. ADVANCED MARKET STRUCTURE (HH, LH, HL, LL)
+# 3. HIGH-FREQUENCY TREND ANALYSIS
 # ==========================================
-def analyze_market_structure(candles):
-    if len(candles) < 6:
+def analyze_trend_momentum(candles):
+    """
+    Simplified trend analysis to generate higher frequency execution signals
+    """
+    if len(candles) < 10:
         return "NEUTRAL"
     
-    highs = [c['high'] for c in candles[-6:]]
-    lows = [c['low'] for c in candles[-6:]]
+    recent_closes = [c['close'] for c in candles[-5:]]
+    prev_closes = [c['close'] for c in candles[-10:-5]]
     
-    h1, h2 = highs[-3], highs[-1]
-    l1, l2 = lows[-3], lows[-1]
-    
-    if h2 > h1 and l2 > l1:
-        return "BULLISH_HH_HL"
-    elif h2 < h1 and l2 < l1:
-        return "BEARISH_LH_LL"
+    if sum(recent_closes) / 5 > sum(prev_closes) / 5:
+        return "BULLISH"
+    elif sum(recent_closes) / 5 < sum(prev_closes) / 5:
+        return "BEARISH"
     return "NEUTRAL"
 
-def check_candlestick_patterns(candles):
-    if len(candles) < 2:
-        return "NONE"
-    curr = candles[-1]
-    prev = candles[-2]
-    total_range = curr['high'] - curr['low']
-    if total_range == 0:
-        return "NONE"
-        
-    body_size = abs(curr['close'] - curr['open'])
-    upper_wick = curr['high'] - max(curr['open'], curr['close'])
-    lower_wick = min(curr['open'], curr['close']) - curr['low']
-    
-    if (lower_wick / total_range) >= 0.60:
-        return "BULLISH_PINBAR"
-    if (upper_wick / total_range) >= 0.60:
-        return "BEARISH_PINBAR"
-    if prev['close'] < prev['open'] and curr['close'] > curr['open']:
-        if curr['close'] >= prev['open'] and curr['open'] <= prev['close']:
-            return "BULLISH_ENGULFING"
-    if prev['close'] > prev['open'] and curr['close'] < curr['open']:
-        if curr['close'] <= prev['open'] and curr['open'] >= prev['close']:
-            return "BEARISH_ENGULFING"
-    return "NONE"
-
 # ==========================================
-# 4. BROKER API CLIENTS (OANDA, Capital.com)
+# 4. BROKER API EXECUTION
 # ==========================================
 def get_oanda_headers(api_token):
     return {
@@ -167,7 +139,7 @@ def get_oanda_base_url(environment):
         return "https://api-fxtrade.oanda.com/v3"
     return "https://api-fxpractice.oanda.com/v3"
 
-def fetch_full_candles(base_url, headers, instrument="EUR_USD", count=50, granularity="M5"):
+def fetch_full_candles(base_url, headers, instrument="EUR_USD", count=60, granularity="M5"):
     url = f"{base_url}/instruments/{instrument}/candles"
     params = {"count": count, "granularity": granularity, "price": "M"}
     try:
@@ -224,8 +196,8 @@ def place_capital_com_order(profile, instrument, direction, current_price, atr_v
 
     base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
     
-    sl_distance = atr_value * 1.5
-    tp_distance = sl_distance * 2.0
+    sl_distance = atr_value * 1.2
+    tp_distance = sl_distance * 1.5
     
     if direction == "BUY":
         sl_price = round(current_price - sl_distance, 5)
@@ -263,8 +235,8 @@ def place_capital_com_order(profile, instrument, direction, current_price, atr_v
 
 def place_oanda_order(profile, instrument, direction, current_price, atr_value):
     risk_level = getattr(profile, 'risk_level', 'medium')
-    sl_distance = atr_value * (1.2 if risk_level == 'low' else 1.5)
-    tp_distance = sl_distance * 2.0
+    sl_distance = atr_value * 1.2
+    tp_distance = sl_distance * 1.5
     
     units = 1000 if risk_level == 'low' else 2000
     if direction == "BUY":
@@ -302,7 +274,7 @@ def place_oanda_order(profile, instrument, direction, current_price, atr_value):
     return False
 
 # ==========================================
-# 5. MAIN BOT EXECUTION LOOP
+# 5. MAIN HIGH-FREQUENCY LOOP
 # ==========================================
 def run_bot_cycle():
     active_profiles = Profile.objects.filter(is_bot_active=True)
@@ -310,13 +282,12 @@ def run_bot_cycle():
         print("🔍 [BOT SCAN] Waiting for active user profile on dashboard...", flush=True)
         return
 
-    # Check Economic News Guard before processing trades
     if is_high_impact_news_imminent():
         return
 
     for profile in active_profiles:
         broker_type = getattr(profile, 'broker_type', 'oanda')
-        print(f"🔍 [BOT SCAN] User: {profile.user.username} | Broker: {broker_type.upper()} | Scanning 10 pairs...", flush=True)
+        print(f"⚡ [HIGH-FREQ SCAN] User: {profile.user.username} | Broker: {broker_type.upper()} | Scanning 10 pairs...", flush=True)
         
         if broker_type == 'capital':
             base_url = "https://api-capital.backend-capital.com/api/v1"
@@ -326,44 +297,41 @@ def run_bot_cycle():
         headers = {"Content-Type": "application/json"}
 
         for instrument in ASSET_LIST:
-            m5_candles = fetch_full_candles(base_url, headers, instrument=instrument, count=250, granularity="M5")
-            if len(m5_candles) < 200:
+            m5_candles = fetch_full_candles(base_url, headers, instrument=instrument, count=60, granularity="M5")
+            if len(m5_candles) < 30:
                 continue
 
             close_prices = [c['close'] for c in m5_candles]
             current_price = close_prices[-1]
-            ema_200 = calculate_ema(close_prices, 200)
+            ema_50 = calculate_ema(close_prices, 50)
             rsi_14 = calculate_rsi(close_prices, 14)
             atr_value = calculate_atr(m5_candles, 14)
-            market_structure = analyze_market_structure(m5_candles)
-            candle_signal = check_candlestick_patterns(m5_candles)
+            trend_direction = analyze_trend_momentum(m5_candles)
 
-            if ema_200 is None or rsi_14 is None:
+            if ema_50 is None or rsi_14 is None:
                 continue
 
-            # HIGH CONFLUENCE BUY
-            if market_structure == "BULLISH_HH_HL" and current_price > ema_200 and \
-               candle_signal in ["BULLISH_PINBAR", "BULLISH_ENGULFING"] and rsi_14 <= 42:
-                print(f"🎯 [{profile.user.username}] Bullish Confluence Triggered on {instrument}!", flush=True)
+            # HIGH-FREQUENCY BUY TRIGGER (EMA 50 Bounce + RSI <= 48)
+            if trend_direction == "BULLISH" and current_price > ema_50 and rsi_14 <= 48:
+                print(f"⚡ [{profile.user.username}] High-Freq BUY Triggered on {instrument}!", flush=True)
                 if broker_type == 'capital':
                     place_capital_com_order(profile, instrument, "BUY", current_price, atr_value)
                 else:
                     place_oanda_order(profile, instrument, "BUY", current_price, atr_value)
 
-            # HIGH CONFLUENCE SELL
-            elif market_structure == "BEARISH_LH_LL" and current_price < ema_200 and \
-                 candle_signal in ["BEARISH_PINBAR", "BEARISH_ENGULFING"] and rsi_14 >= 58:
-                print(f"🎯 [{profile.user.username}] Bearish Confluence Triggered on {instrument}!", flush=True)
+            # HIGH-FREQUENCY SELL TRIGGER (EMA 50 Bounce + RSI >= 52)
+            elif trend_direction == "BEARISH" and current_price < ema_50 and rsi_14 >= 52:
+                print(f"⚡ [{profile.user.username}] High-Freq SELL Triggered on {instrument}!", flush=True)
                 if broker_type == 'capital':
                     place_capital_com_order(profile, instrument, "SELL", current_price, atr_value)
                 else:
                     place_oanda_order(profile, instrument, "SELL", current_price, atr_value)
 
 if __name__ == "__main__":
-    print("🚀 Elite Celooh 10-Asset Multi-Broker Bot Engine Started...", flush=True)
+    print("⚡ Elite Celooh High-Frequency Engine Started...", flush=True)
     while True:
         try:
             run_bot_cycle()
         except Exception as e:
             print(f"[UNHANDLED EXCEPTION] {e}", flush=True)
-        time.sleep(15)
+        time.sleep(10)
