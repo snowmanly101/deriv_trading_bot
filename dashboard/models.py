@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     
-    # Broker Choice: 'oanda', 'capital', or 'mt5'
+    # Broker Choice: 'oanda', 'capital', 'mt5', or 'polymarket'
     broker_type = models.CharField(max_length=20, default='oanda')
     
     # OANDA Broker Configuration
@@ -21,6 +21,14 @@ class Profile(models.Model):
     mt5_login = models.CharField(max_length=50, blank=True, null=True)
     mt5_password = models.CharField(max_length=100, blank=True, null=True)
     mt5_server = models.CharField(max_length=100, blank=True, null=True)
+
+    # Polymarket Reward Bot Configuration
+    is_poly_bot_active = models.BooleanField(default=False)
+    poly_deposit_wallet = models.CharField(max_length=100, blank=True, null=True)
+    poly_private_key = models.CharField(max_length=255, blank=True, null=True)
+    poly_api_key = models.CharField(max_length=255, blank=True, null=True)
+    poly_api_secret = models.CharField(max_length=255, blank=True, null=True)
+    poly_api_passphrase = models.CharField(max_length=255, blank=True, null=True)
     
     # Risk Management Profile
     risk_level = models.CharField(max_length=20, default='medium')

@@ -6,7 +6,7 @@ import django
 import pandas as pd
 
 # Setup Django environment
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(_file_)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
@@ -29,9 +29,6 @@ def send_telegram_alert(message):
     except Exception as e:
         print(f"[TELEGRAM ERROR] {e}", flush=True)
 
-# ==========================================
-# 1. SESSION MANAGEMENT & CANDLE FETCHING
-# ==========================================
 def get_capital_session(profile):
     base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
     
@@ -53,12 +50,14 @@ def get_capital_session(profile):
             cst = response.headers.get("CST")
             x_sec = response.headers.get("X-SECURITY-TOKEN")
             return cst, x_sec
-        else:
-            print(f"[CAPITAL SESSION REJECTED] {response.text}", flush=True)
     except Exception as e:
         print(f"[CAPITAL SESSION ERROR] {e}", flush=True)
-        
     return None, None
+
+def get_oanda_base_url(environment):
+    if environment == 'live':
+        return "https://api-fxtrade.oanda.com/v3"
+    return "https://api-fxpractice.oanda.com/v3"
 
 def get_oanda_headers(api_token):
     return {
@@ -66,15 +65,7 @@ def get_oanda_headers(api_token):
         "Authorization": f"Bearer {api_token}"
     }
 
-def get_oanda_base_url(environment):
-    if environment == 'live':
-        return "https://api-fxtrade.oanda.com/v3"
-    return "https://api-fxpractice.oanda.com/v3"
-
 def fetch_full_candles(base_url, headers, instrument="GOLD", count=30, granularity="M5"):
-    """
-    Unified candle fetcher for both Capital.com and OANDA
-    """
     if "capital.backend-capital.com" in base_url:
         epic = "GOLD" if instrument in ["GOLD", "XAU_USD"] else instrument.replace("_", "")
         cap_res = "MINUTE_5" if granularity == "M5" else "MINUTE"
@@ -93,7 +84,7 @@ def fetch_full_candles(base_url, headers, instrument="GOLD", count=30, granulari
                     })
                 return parsed
         except Exception as e:
-            print(f"[ERROR] Capital candle fetch failed for {instrument}: {e}", flush=True)
+            print(f"[ERROR] Capital candle fetch failed: {e}", flush=True)
         return []
     else:
         url = f"{base_url}/instruments/{instrument}/candles"
@@ -115,20 +106,12 @@ def fetch_full_candles(base_url, headers, instrument="GOLD", count=30, granulari
                         })
                 return parsed
         except Exception as e:
-            print(f"[ERROR] OANDA candle fetch failed for {instrument}: {e}", flush=True)
+            print(f"[ERROR] OANDA candle fetch failed: {e}", flush=True)
         return []
 
-# ==========================================
-# 2. HIGH-FREQUENCY GOLD SIGNAL ENGINE
-# ==========================================
 def evaluate_gold_signal(candles):
-    """
-    Relaxed high-frequency momentum logic for Gold.
-    Triggers immediate trades based on EMA (9) vs EMA (21) crossover.
-    """
     if len(candles) < 15:
         return None
-
     df = pd.DataFrame(candles)
     df['ema9'] = df['close'].ewm(span=9, adjust=False).mean()
     df['ema21'] = df['close'].ewm(span=21, adjust=False).mean()
@@ -140,43 +123,30 @@ def evaluate_gold_signal(candles):
         return "BUY"
     elif ema9 < ema21:
         return "SELL"
-
     return None
 
-# ==========================================
-# 3. ORDER EXECUTION & POSITION MONITORING
-# ==========================================
 def place_capital_com_order(profile, instrument, direction):
     cst, x_sec = get_capital_session(profile)
     if not cst or not x_sec:
-        print("❌ [CAPITAL ERROR] Session creation failed. Check API key/credentials.", flush=True)
         return False
 
     base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
     epic_symbol = "GOLD" if instrument in ["GOLD", "XAU_USD"] else instrument.replace("_", "")
 
-    # Clean market execution payload
     payload = {
         "epic": epic_symbol,
         "direction": direction,
         "size": 1.0,
         "guaranteedStopLoss": False
     }
-    
-    headers = {
-        "CST": cst,
-        "X-SECURITY-TOKEN": x_sec,
-        "Content-Type": "application/json"
-    }
+    headers = {"CST": cst, "X-SECURITY-TOKEN": x_sec, "Content-Type": "application/json"}
     
     try:
         response = requests.post(f"{base_url}/positions", headers=headers, json=payload, timeout=10)
         if response.status_code in [200, 201]:
-            print(f"✅ [CAPITAL.COM ORDER SUCCESS] {instrument} ({epic_symbol}) {direction}", flush=True)
-            send_telegram_alert(f"🚀 CELOOH BOT TRADE (Capital.com)\nAsset: {instrument}\nDirection: {direction}\nSize: 1.0 Lot")
+            print(f"✅ [CAPITAL ORDER SUCCESS] {direction} GOLD", flush=True)
+            send_telegram_alert(f"🚀 CELOOH BOT TRADE (Capital.com)\nAsset: GOLD\nDirection: {direction}\nSize: 1.0 Lot")
             return True
-        else:
-            print(f"❌ [Capital.com REJECTED]: {response.text}", flush=True)
     except Exception as e:
         print(f"[CAPITAL ERROR] {e}", flush=True)
     return False
@@ -203,52 +173,25 @@ def place_oanda_order(profile, instrument, direction):
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         if response.status_code in [200, 201]:
-            print(f"✅ [OANDA ORDER SUCCESS] {instrument} {direction}", flush=True)
-            send_telegram_alert(f"🚀 CELOOH BOT TRADE (OANDA)\nAsset: {instrument}\nDirection: {direction}")
+            print(f"✅ [OANDA ORDER SUCCESS] {direction} GOLD", flush=True)
+            send_telegram_alert(f"🚀 CELOOH BOT TRADE (OANDA)\nAsset: GOLD\nDirection: {direction}")
             return True
     except Exception as e:
-        print(f"[ERROR] OANDA order exception: {e}", flush=True)
+        print(f"[OANDA ERROR] {e}", flush=True)
     return False
 
-def get_open_positions_count(profile):
-    """
-    Checks how many open positions currently exist so we don't over-leverage.
-    """
-    broker_type = getattr(profile, 'broker_type', 'oanda')
-    if broker_type == 'capital':
-        cst, x_sec = get_capital_session(profile)
-        if not cst or not x_sec:
-            return 0
-        base_url = "https://api-capital.backend-capital.com/api/v1" if profile.oanda_environment == 'live' else "https://demo-api-capital.backend-capital.com/api/v1"
-        headers = {"CST": cst, "X-SECURITY-TOKEN": x_sec, "Content-Type": "application/json"}
-        try:
-            res = requests.get(f"{base_url}/positions", headers=headers, timeout=5)
-            if res.status_code == 200:
-                positions = res.json().get('positions', [])
-                return len(positions)
-        except Exception:
-            pass
-    return 0
-
-# ==========================================
-# 4. MAIN WORKER LOOP
-# ==========================================
 def run_bot_cycle():
     active_profiles = Profile.objects.filter(is_bot_active=True)
     if not active_profiles.exists():
-        print("🔍 [BOT SCAN] Waiting for active user profile on dashboard...", flush=True)
+        print("🔍 [BOT SCAN] Waiting for active user profile...", flush=True)
         return
 
     for profile in active_profiles:
         broker_type = getattr(profile, 'broker_type', 'oanda')
-        open_trades = get_open_positions_count(profile)
-        
-        # If a trade is currently open, let it run its 8-15 minute cycle
-        if open_trades > 0:
-            print(f"⏳ [{profile.user.username}] Active Gold Trade Running (Positions: {open_trades}). Waiting for completion...", flush=True)
-            return
+        if broker_type == 'polymarket':
+            continue  # Handled separately if polymarket service is active
 
-        print(f"⚡ [HIGH-FREQ SCAN] User: {profile.user.username} | Broker: {broker_type.upper()} | Asset: GOLD ONLY", flush=True)
+        print(f"⚡ [SCAN] User: {profile.user.username} | Broker: {broker_type.upper()} | Asset: GOLD ONLY", flush=True)
 
         if broker_type == 'capital':
             cst, xsec = get_capital_session(profile)
@@ -262,24 +205,21 @@ def run_bot_cycle():
 
         m5_candles = fetch_full_candles(base_url, headers, instrument="GOLD", count=30, granularity="M5")
         if len(m5_candles) < 15:
-            print("⚠️ Insufficient Gold candle data received. Retrying on next loop...", flush=True)
             continue
 
         signal = evaluate_gold_signal(m5_candles)
-        latest_price = m5_candles[-1]['close']
-
         if signal:
-            print(f"⚡ [{profile.user.username}] High-Freq Signal Detected: {signal} on GOLD at {latest_price}", flush=True)
+            print(f"⚡ Signal Detected: {signal} on GOLD", flush=True)
             if broker_type == 'capital':
                 place_capital_com_order(profile, "GOLD", signal)
             else:
                 place_oanda_order(profile, "GOLD", signal)
 
-if __name__ == "__main__":
-    print("⚡ Celooh High-Frequency Gold Engine Active...", flush=True)
+if _name_ == "_main_":
+    print("⚡ Celooh Gold Engine Active...", flush=True)
     while True:
         try:
             run_bot_cycle()
         except Exception as e:
-            print(f"[UNHANDLED EXCEPTION] {e}", flush=True)
+            print(f"[ERROR] {e}", flush=True)
         time.sleep(10)

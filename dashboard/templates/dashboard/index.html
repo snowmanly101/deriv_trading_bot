@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Celooh Forex Trading Engine</title>
+    <title>Dashboard | Celooh Forex & Polymarket Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -31,7 +31,6 @@
             padding-bottom: 60px;
         }
 
-        /* Live Forex Ticker Bar */
         .ticker-bar {
             background: rgba(3, 7, 18, 0.95);
             border-bottom: 1px solid var(--border-color);
@@ -105,7 +104,6 @@
         .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
         .card-title { font-size: 17px; font-weight: 700; color: var(--text-white); }
 
-        /* Forex Hero Banner */
         .hero-banner {
             background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%),
                         url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80') center/cover;
@@ -118,7 +116,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Performance Grid Dashboard */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -140,7 +137,6 @@
         .stat-val.loss { color: var(--danger-red); }
         .stat-val.gold { color: var(--neon-gold); }
 
-        /* Market Intelligence Directives Box */
         .intel-box {
             background: rgba(3, 7, 18, 0.85);
             border: 1px solid var(--border-glow);
@@ -181,7 +177,6 @@
             font-size: 14px;
         }
 
-        /* Modern Switch Toggle */
         .switch-container {
             display: flex;
             align-items: center;
@@ -300,8 +295,6 @@
             <div class="ticker-item">USD/JPY <span>154.20</span> <span class="ticker-red">-0.10% ▼</span></div>
             <div class="ticker-item">AUD/USD <span>0.6580</span> <span class="ticker-green">+0.32% ▲</span></div>
             <div class="ticker-item">XAU/USD (Gold) <span>2385.10</span> <span class="ticker-green">+0.85% ▲</span></div>
-            <div class="ticker-item">EUR/USD <span>1.0854</span> <span class="ticker-green">+0.24% ▲</span></div>
-            <div class="ticker-item">GBP/USD <span>1.2641</span> <span class="ticker-green">+0.15% ▲</span></div>
         </div>
     </div>
 
@@ -312,7 +305,7 @@
                 <rect width="100" height="100" rx="24" fill="#f59e0b" />
                 <path d="M 30 55 L 45 70 L 75 35" stroke="#030712" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-            <span class="brand-title">CELOOH <span style="color: var(--neon-cyan);">FOREX TRADING</span></span>
+            <span class="brand-title">CELOOH <span style="color: var(--neon-cyan);">TRADING ENGINE</span></span>
         </div>
 
         <div>
@@ -327,7 +320,7 @@
         <div>
             <div class="hero-banner">
                 <div>
-                    <h2>Automated Multi-Broker Trading Engine</h2>
+                    <h2>Automated Multi-Broker & Polymarket Engine</h2>
                     <p style="color: var(--text-muted); font-size: 13px;">Universal Algorithmic Strategy Connection</p>
                 </div>
             </div>
@@ -393,32 +386,22 @@
                 </div>
             </div>
 
-            <!-- Broker Guidance Box -->
-            <div class="guide-box">
-                <h4>💡 Step-by-Step Guide: How to Link Your Broker</h4>
-                <ol>
-                    <li>Select your preferred broker type from the dropdown below (OANDA, Capital.com, or MT5).</li>
-                    <li>For <strong>Capital.com</strong>: Enter your Capital.com login Email, API Security Token, and CST Token.</li>
-                    <li>For <strong>OANDA</strong>: Generate a Personal Access Token from your OANDA Client portal and copy your Account ID.</li>
-                    <li>For <strong>MT5 Brokers (Exness, HFM, etc.)</strong>: Enter your MT5 Account Login Number, Password, and Server name.</li>
-                    <li>Select your risk profile, toggle the bot switch ON, and click Save!</li>
-                </ol>
-            </div>
-
+            <!-- Broker & Polymarket Settings Form -->
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">Broker & Strategy Settings</span>
+                    <span class="card-title">Broker & Polymarket Reward Settings</span>
                 </div>
 
                 <form method="POST" action="{% url 'update_broker_settings' %}">
                     {% csrf_token %}
                     
                     <div class="form-group">
-                        <label>Select Trading Broker</label>
+                        <label>Select Trading Broker / Platform</label>
                         <select name="broker_type" id="brokerTypeSelect" class="form-control" style="cursor: pointer;" onchange="toggleBrokerFields()">
                             <option value="oanda" {% if profile.broker_type == 'oanda' or not profile.broker_type %}selected{% endif %}>OANDA (REST API)</option>
                             <option value="capital" {% if profile.broker_type == 'capital' %}selected{% endif %}>Capital.com (REST API)</option>
                             <option value="mt5" {% if profile.broker_type == 'mt5' %}selected{% endif %}>MT5 Broker (Exness, HFM, IC Markets, etc.)</option>
+                            <option value="polymarket" {% if profile.broker_type == 'polymarket' %}selected{% endif %}>Polymarket Reward Bot</option>
                         </select>
                     </div>
 
@@ -440,19 +423,13 @@
                                 <option value="live" {% if profile.oanda_environment == 'live' %}selected{% endif %}>Live (Real Money Account)</option>
                             </select>
                         </div>
-
                         <div class="form-group">
                             <label>OANDA Account ID</label>
-                            <input type="text" name="oanda_account_id" class="form-control" 
-                                   value="{{ profile.oanda_account_id|default:'' }}" 
-                                   placeholder="e.g. 101-004-12345678-001">
+                            <input type="text" name="oanda_account_id" class="form-control" value="{{ profile.oanda_account_id|default:'' }}" placeholder="e.g. 101-004-12345678-001">
                         </div>
-
                         <div class="form-group">
                             <label>OANDA API Personal Access Token</label>
-                            <input type="password" name="oanda_api_token" class="form-control" 
-                                   value="{{ profile.oanda_api_token|default:'' }}" 
-                                   placeholder="Paste your OANDA API token here">
+                            <input type="password" name="oanda_api_token" class="form-control" value="{{ profile.oanda_api_token|default:'' }}" placeholder="Paste your OANDA API token">
                         </div>
                     </div>
 
@@ -460,23 +437,15 @@
                     <div id="capitalFields" style="display: none;">
                         <div class="form-group">
                             <label>Capital.com Account Email</label>
-                            <input type="email" name="capital_email" class="form-control" 
-                                   value="{{ profile.capital_email|default:'' }}" 
-                                   placeholder="e.g. samueloluwasesan@outlook.com">
+                            <input type="email" name="capital_email" class="form-control" value="{{ profile.capital_email|default:'' }}" placeholder="e.g. yourname@outlook.com">
                         </div>
-
                         <div class="form-group">
                             <label>Capital.com Security Token (API Key)</label>
-                            <input type="password" name="capital_security_token" class="form-control" 
-                                   value="{{ profile.capital_security_token|default:'' }}" 
-                                   placeholder="Enter your Capital.com API security token">
+                            <input type="password" name="capital_security_token" class="form-control" value="{{ profile.capital_security_token|default:'' }}" placeholder="Enter security token">
                         </div>
-
                         <div class="form-group">
                             <label>Capital.com CST Token</label>
-                            <input type="password" name="capital_cst_token" class="form-control" 
-                                   value="{{ profile.capital_cst_token|default:'' }}" 
-                                   placeholder="Enter your Capital.com session CST token">
+                            <input type="password" name="capital_cst_token" class="form-control" value="{{ profile.capital_cst_token|default:'' }}" placeholder="Enter CST token">
                         </div>
                     </div>
 
@@ -484,23 +453,39 @@
                     <div id="mt5Fields" style="display: none;">
                         <div class="form-group">
                             <label>MT5 Login / Account Number</label>
-                            <input type="text" name="mt5_login" class="form-control" 
-                                   value="{{ profile.mt5_login|default:'' }}" 
-                                   placeholder="e.g. 50123456">
+                            <input type="text" name="mt5_login" class="form-control" value="{{ profile.mt5_login|default:'' }}" placeholder="e.g. 50123456">
                         </div>
-
                         <div class="form-group">
                             <label>MT5 Password</label>
-                            <input type="password" name="mt5_password" class="form-control" 
-                                   value="{{ profile.mt5_password|default:'' }}" 
-                                   placeholder="Your MT5 trading password">
+                            <input type="password" name="mt5_password" class="form-control" value="{{ profile.mt5_password|default:'' }}" placeholder="Trading password">
                         </div>
-
                         <div class="form-group">
                             <label>MT5 Server Name</label>
-                            <input type="text" name="mt5_server" class="form-control" 
-                                   value="{{ profile.mt5_server|default:'' }}" 
-                                   placeholder="e.g. Exness-RealTrial or Exness-MT5">
+                            <input type="text" name="mt5_server" class="form-control" value="{{ profile.mt5_server|default:'' }}" placeholder="e.g. Exness-RealTrial">
+                        </div>
+                    </div>
+
+                    <!-- Polymarket Reward Bot Fields Group -->
+                    <div id="polymarketFields" style="display: none;">
+                        <div class="form-group">
+                            <label>Polymarket Deposit / Funder Wallet Address</label>
+                            <input type="text" name="poly_deposit_wallet" class="form-control" value="{{ profile.poly_deposit_wallet|default:'' }}" placeholder="0x...">
+                        </div>
+                        <div class="form-group">
+                            <label>Polymarket Private Key (Signer Key)</label>
+                            <input type="password" name="poly_private_key" class="form-control" value="{{ profile.poly_private_key|default:'' }}" placeholder="0x...">
+                        </div>
+                        <div class="form-group">
+                            <label>Polymarket API Key</label>
+                            <input type="text" name="poly_api_key" class="form-control" value="{{ profile.poly_api_key|default:'' }}" placeholder="API Key">
+                        </div>
+                        <div class="form-group">
+                            <label>Polymarket API Secret</label>
+                            <input type="password" name="poly_api_secret" class="form-control" value="{{ profile.poly_api_secret|default:'' }}" placeholder="API Secret">
+                        </div>
+                        <div class="form-group">
+                            <label>Polymarket API Passphrase</label>
+                            <input type="password" name="poly_api_passphrase" class="form-control" value="{{ profile.poly_api_passphrase|default:'' }}" placeholder="API Passphrase">
                         </div>
                     </div>
 
@@ -508,16 +493,15 @@
                     <div class="switch-container">
                         <div>
                             <div style="font-weight: 700; font-size: 14px;">Automated Bot Engine</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">Toggle execution for Forex pairs & Gold</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">Toggle automated execution</div>
                         </div>
                         <label class="switch">
-                            <input type="checkbox" id="botToggle" name="is_bot_active" 
-                                   {% if profile.is_bot_active %}checked{% endif %}>
+                            <input type="checkbox" id="botToggle" name="is_bot_active" {% if profile.is_bot_active %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </div>
 
-                    <button type="submit" class="btn-save">Save & Synchronize Trading Bot</button>
+                    <button type="submit" class="btn-save">Save & Synchronize Engine Settings</button>
                 </form>
             </div>
         </div>
@@ -527,105 +511,58 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">System Status</span>
-                    <span class="trial-badge">● DUAL-ENGINE ACTIVE</span>
+                    <span class="trial-badge">● MULTI-ENGINE ACTIVE</span>
                 </div>
 
-                <div style="font-size: 12px; color: var(--text-muted);">ACTIVE BROKER</div>
+                <div style="font-size: 12px; color: var(--text-muted);">ACTIVE PLATFORM</div>
                 <div style="font-size: 15px; font-weight: 700; color: var(--neon-gold); margin: 4px 0 16px 0;">
-                    {% if profile.broker_type == 'capital' %}
-                        Capital.com Connected
-                    {% elif profile.broker_type == 'mt5' %}
-                        {% if profile.mt5_login %} MT5 Connected ({{ profile.mt5_login }}) {% else %} Pending MT5 Setup {% endif %}
-                    {% else %}
-                        {% if profile.oanda_account_id %} OANDA Connected ({{ profile.oanda_account_id }}) {% else %} Pending OANDA Setup {% endif %}
-                    {% endif %}
+                    {% if profile.broker_type == 'capital' %} Capital.com Connected
+                    {% elif profile.broker_type == 'mt5' %} MT5 Connected
+                    {% elif profile.broker_type == 'polymarket' %} Polymarket Reward Bot Connected
+                    {% else %} OANDA Connected {% endif %}
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-muted);">BOT ALGORITHM</div>
                 <div style="font-size: 15px; font-weight: 700; margin-top: 4px;" id="botStatusDisplay">
-                    {% if profile.is_bot_active %} 
-                        <span style="color: var(--success-green);">● RUNNING LIVE</span> 
-                    {% else %} 
-                        <span style="color: var(--text-muted);">○ PAUSED</span> 
-                    {% endif %}
+                    {% if profile.is_bot_active %} <span style="color: var(--success-green);">● RUNNING LIVE</span> 
+                    {% else %} <span style="color: var(--text-muted);">○ PAUSED</span> {% endif %}
                 </div>
             </div>
 
-            <!-- 3-Condition Confluence Engine Monitor -->
+            <!-- Live Execution Stream -->
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">🎯 Confluence Engine Status</span>
-                    <span style="font-size: 11px; color: var(--neon-cyan); font-weight: 700;">ACTIVE</span>
-                </div>
-                <div class="confluence-list">
-                    <div class="confluence-item">
-                        <span>1. 24H Macro Trend Gate</span>
-                        <span class="badge-check">ACTIVE ✓</span>
-                    </div>
-                    <div class="confluence-item">
-                        <span>2. 200 EMA & RSI Filter</span>
-                        <span class="badge-check">ACTIVE ✓</span>
-                    </div>
-                    <div class="confluence-item">
-                        <span>3. Bollinger Band Trigger</span>
-                        <span class="badge-check">ACTIVE ✓</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Live Forex Winning Trades Stream -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">⚡ Live Forex Execution Feed</span>
+                    <span class="card-title">⚡ Live Execution Stream</span>
                     <span style="font-size: 11px; color: var(--success-green); font-weight: 700;">LIVE</span>
                 </div>
-
-                <div class="trade-feed-list" id="tradeFeed">
-                    <!-- Dynamic trades populated via JS -->
-                </div>
+                <div class="trade-feed-list" id="tradeFeed"></div>
             </div>
         </div>
 
     </main>
 
-    <!-- Interactive Toggle UI & Live Execution Stream Script -->
     <script>
         function toggleBrokerFields() {
             const brokerVal = document.getElementById('brokerTypeSelect').value;
-            const oandaDiv = document.getElementById('oandaFields');
-            const capitalDiv = document.getElementById('capitalFields');
-            const mt5Div = document.getElementById('mt5Fields');
-
-            oandaDiv.style.display = 'none';
-            capitalDiv.style.display = 'none';
-            mt5Div.style.display = 'none';
+            document.getElementById('oandaFields').style.display = 'none';
+            document.getElementById('capitalFields').style.display = 'none';
+            document.getElementById('mt5Fields').style.display = 'none';
+            document.getElementById('polymarketFields').style.display = 'none';
 
             if (brokerVal === 'capital') {
-                capitalDiv.style.display = 'block';
+                document.getElementById('capitalFields').style.display = 'block';
             } else if (brokerVal === 'mt5') {
-                mt5Div.style.display = 'block';
+                document.getElementById('mt5Fields').style.display = 'block';
+            } else if (brokerVal === 'polymarket') {
+                document.getElementById('polymarketFields').style.display = 'block';
             } else {
-                oandaDiv.style.display = 'block';
+                document.getElementById('oandaFields').style.display = 'block';
             }
         }
-        // Run on load to set correct initial state
         toggleBrokerFields();
 
-        const botToggle = document.getElementById('botToggle');
-        const botStatusDisplay = document.getElementById('botStatusDisplay');
-
-        if (botToggle && botStatusDisplay) {
-            botToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    botStatusDisplay.innerHTML = '<span style="color: var(--success-green);">● RUNNING LIVE</span>';
-                } else {
-                    botStatusDisplay.innerHTML = '<span style="color: var(--text-muted);">○ PAUSED</span>';
-                }
-            });
-        }
-
         const traders = ['@Alex_M', '@David_K', '@Celooh_VIP', '@Michael_R', '@Sarah_T'];
-        const pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'XAU/USD'];
+        const pairs = ['EUR/USD', 'GBP/USD', 'XAU/USD', 'Polymarket Reward Claim'];
 
         function addLiveTrade() {
             const feed = document.getElementById('tradeFeed');
@@ -639,19 +576,16 @@
             item.className = 'trade-card';
             item.innerHTML = `
                 <div>
-                    <strong>Trader ${trader}</strong><br>
+                    <strong>User ${trader}</strong><br>
                     <span style="font-size: 11px; color: var(--text-muted);">${pair} • ${time}</span>
                 </div>
                 <span style="color: var(--success-green); font-weight: 800; font-size: 14px;">+$${profit}</span>
             `;
-
             feed.prepend(item);
             if (feed.children.length > 5) feed.removeChild(feed.lastChild);
         }
-
         for(let i=0; i<3; i++) addLiveTrade();
         setInterval(addLiveTrade, 4000);
     </script>
-
 </body>
 </html>

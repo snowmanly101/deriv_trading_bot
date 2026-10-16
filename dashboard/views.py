@@ -64,7 +64,7 @@ def update_broker_settings(request):
     if request.method == 'POST':
         profile, created = Profile.objects.get_or_create(user=request.user)
         
-        # Broker Type Selection ('oanda', 'capital', or 'mt5')
+        # Broker Type Selection ('oanda', 'capital', 'mt5', or 'polymarket')
         profile.broker_type = request.POST.get('broker_type', 'oanda')
         
         # OANDA Broker Credentials & Settings
@@ -81,6 +81,14 @@ def update_broker_settings(request):
         profile.mt5_login = request.POST.get('mt5_login', '').strip()
         profile.mt5_password = request.POST.get('mt5_password', '').strip()
         profile.mt5_server = request.POST.get('mt5_server', '').strip()
+
+        # Polymarket Reward Bot Settings
+        profile.poly_deposit_wallet = request.POST.get('poly_deposit_wallet', '').strip()
+        profile.poly_private_key = request.POST.get('poly_private_key', '').strip()
+        profile.poly_api_key = request.POST.get('poly_api_key', '').strip()
+        profile.poly_api_secret = request.POST.get('poly_api_secret', '').strip()
+        profile.poly_api_passphrase = request.POST.get('poly_api_passphrase', '').strip()
+        profile.is_poly_bot_active = request.POST.get('is_poly_bot_active') == 'on'
         
         # Risk Management Settings
         risk_level = request.POST.get('risk_level', 'medium').lower()
