@@ -215,7 +215,7 @@ def run_bot_cycle():
             else:
                 place_oanda_order(profile, "GOLD", signal)
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     print("⚡ Celooh Gold Engine Active...", flush=True)
     while True:
         try:
