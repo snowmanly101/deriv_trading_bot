@@ -23,7 +23,7 @@ class Profile(models.Model):
     mt5_server = models.CharField(max_length=100, blank=True, null=True)
 
     # Polymarket Reward Bot Configuration
-    is_poly_bot_active = models.BooleanField(default=False)
+    is_poly_bot_active = models.BooleanField(default=False, null=True, blank=True)
     poly_deposit_wallet = models.CharField(max_length=100, blank=True, null=True)
     poly_private_key = models.CharField(max_length=255, blank=True, null=True)
     poly_api_key = models.CharField(max_length=255, blank=True, null=True)
